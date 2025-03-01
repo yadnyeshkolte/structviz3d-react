@@ -84,7 +84,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         }
 
         // Calculate camera distance based on model size
-        const distance = modelSize * 1.5;
+        const distance = modelSize * 1.2;
 
         // Define the new camera position based on view
         let newPosition = new THREE.Vector3();
@@ -245,7 +245,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                 0.1,
                 1000
             );
-            camera.position.set(0, 0, 5);
+            camera.position.set(2, 2, 2);
             cameraRef.current = camera;
 
             // Setup renderer with improved settings
@@ -284,12 +284,12 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
             // Add grid helper centered at origin
             const gridHelper = new THREE.GridHelper(10, 10, 0x808080, 0xDDDDDD);
-            gridHelper.position.y = -0.01; // Slightly below model to avoid z-fighting
+            gridHelper.position.y = 0; // Slightly below model to avoid z-fighting
             scene.add(gridHelper);
 
             // Add coordinate axes for orientation
             const axesHelper = new THREE.AxesHelper(5);
-            axesHelper.position.y = 0.01; // Slightly above grid
+            axesHelper.position.y = 0; // Slightly above grid
             scene.add(axesHelper);
 
             // Load model
@@ -390,7 +390,9 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         model.receiveShadow = true;
 
                         // Reset camera and controls to isometric view
-                        handleViewChange('isometric');
+                        setTimeout(() => {
+                            handleViewChange('isometric');
+                        }, 100);
 
                         setLoading(false);
 
@@ -434,6 +436,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         scene.add(modelGroup);
                         modelGroup.add(model);
                         modelGroupRef.current = modelGroup;
+
 
                         // Calculate bounding box to center the model
                         const box = new THREE.Box3().setFromObject(model);
