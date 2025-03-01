@@ -44,7 +44,7 @@ function App() {
                         </div>
 
                         <footer className="App-footer">
-                            <p>StructViz3D &copy; {new Date().getFullYear()}</p>
+                            <p>StructViz3D {new Date().getFullYear()}</p>
                         </footer>
                     </div>
                 </div>
