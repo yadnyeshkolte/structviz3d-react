@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import ColorSelector from './ColorSelector';
+import ViewerControls from './ViewerControls';
 
 const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [container, setContainer] = useState(null);
@@ -13,17 +15,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     // Refs to store scene objects for color updates
     const sceneRef = useRef(null);
     const modelRef = useRef(null);
-
-    // Color options
-    const colorOptions = [
-        { name: 'Gray', value: '#666666' },
-        { name: 'Blue', value: '#4285F4' },
-        { name: 'Red', value: '#EA4335' },
-        { name: 'Green', value: '#34A853' },
-        { name: 'Yellow', value: '#FBBC05' },
-        { name: 'Purple', value: '#8E44AD' },
-        { name: 'Teal', value: '#16A085' },
-    ];
+    const rendererRef = useRef(null);
+    const lightsRef = useRef([]);
 
     // Toggle fullscreen
     const toggleFullscreen = () => {
@@ -51,8 +44,16 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         if (modelRef.current) {
             modelRef.current.traverse((child) => {
                 if (child.isMesh) {
-                    child.material.color = new THREE.Color(color);
-                    child.material.needsUpdate = true;
+                    // If the material is an array, update all materials
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => {
+                            mat.color = new THREE.Color(color);
+                            mat.needsUpdate = true;
+                        });
+                    } else {
+                        child.material.color = new THREE.Color(color);
+                        child.material.needsUpdate = true;
+                    }
                 }
             });
         }
@@ -82,11 +83,20 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             );
             camera.position.set(0, 0, 5);
 
-            // Setup renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            // Setup renderer with improved settings
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                preserveDrawingBuffer: true
+            });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            rendererRef.current = renderer;
 
             // Clear container before adding new renderer
             while (container.firstChild) {
@@ -98,34 +108,73 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.25;
-            controls.target.set(0, 0, 0); // Ensure controls are targeting the center
+            controls.enableZoom = true;
+            controls.enablePan = true;
+            controls.target.set(0, 0, 0);
+            controls.update();
 
-            // Add lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(1, 1, 1);
-            scene.add(directionalLight);
+            // Add comprehensive lighting setup
+            setupLighting(scene);
 
             // Add grid helper centered at origin
-            const gridHelper = new THREE.GridHelper(10, 10);
+            const gridHelper = new THREE.GridHelper(10, 10, 0x808080, 0xDDDDDD);
+            gridHelper.position.y = -0.01; // Slightly below model to avoid z-fighting
             scene.add(gridHelper);
 
             // Load model
             loadModel();
         };
 
+        const setupLighting = (scene) => {
+            lightsRef.current = []; // Clear previous lights
+
+            // Ambient light for overall illumination
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+            lightsRef.current.push(ambientLight);
+
+            // Main directional light (sun-like) with shadows
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            mainLight.position.set(5, 10, 7.5);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            mainLight.shadow.camera.near = 0.5;
+            mainLight.shadow.camera.far = 50;
+            mainLight.shadow.camera.left = -10;
+            mainLight.shadow.camera.right = 10;
+            mainLight.shadow.camera.top = 10;
+            mainLight.shadow.camera.bottom = -10;
+            scene.add(mainLight);
+            lightsRef.current.push(mainLight);
+
+            // Hemisphere light for more natural environment lighting
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x223344, 0.5);
+            scene.add(hemiLight);
+            lightsRef.current.push(hemiLight);
+
+            // Additional fill lights from different directions
+            const fillLight1 = new THREE.DirectionalLight(0xffffff, 0.3);
+            fillLight1.position.set(-5, 2, -5);
+            scene.add(fillLight1);
+            lightsRef.current.push(fillLight1);
+
+            const fillLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+            fillLight2.position.set(5, 0, -5);
+            scene.add(fillLight2);
+            lightsRef.current.push(fillLight2);
+
+            const backLight = new THREE.DirectionalLight(0xffffff, 0.2);
+            backLight.position.set(0, 5, -10);
+            scene.add(backLight);
+            lightsRef.current.push(backLight);
+        };
+
         const loadModel = () => {
             const loader = new GLTFLoader();
 
-            // Make sure the bin file is properly loaded
-            const loadingManager = new THREE.LoadingManager();
-
             // We need to make sure the model can find its associated binary file
-            // This is important since we're storing them separately
             const resourcePath = modelUrl.substring(0, modelUrl.lastIndexOf('/') + 1);
-
             loader.setResourcePath(resourcePath);
 
             loader.load(
@@ -151,8 +200,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     // Move the model itself (not the group) to center it within the group
                     model.position.set(-center.x, -center.y, -center.z);
 
-                    // The group is now at the origin (0,0,0) and the model is centered within it
-
                     // Calculate size for scaling
                     const size = box.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
@@ -161,12 +208,26 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         modelGroup.scale.set(scale, scale, scale);
                     }
 
-                    // Set model material color to current selected color
+                    // Enable shadows on all meshes
                     model.traverse((child) => {
                         if (child.isMesh) {
-                            // Create a new material with specific color
-                            child.material.color = new THREE.Color(modelColor);
-                            child.material.needsUpdate = true;
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+
+                            // Set material properties for better rendering
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(mat => {
+                                    mat.color = new THREE.Color(modelColor);
+                                    mat.roughness = 0.7;
+                                    mat.metalness = 0.3;
+                                    mat.needsUpdate = true;
+                                });
+                            } else {
+                                child.material.color = new THREE.Color(modelColor);
+                                child.material.roughness = 0.7;
+                                child.material.metalness = 0.3;
+                                child.material.needsUpdate = true;
+                            }
                         }
                     });
 
@@ -257,90 +318,15 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
             {/* Controls Overlay */}
             {!loading && !error && modelUrl && (
-                <div className="viewer-controls" style={{
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    background: 'rgba(0,0,0,0.5)',
-                    padding: '10px',
-                    borderRadius: '5px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '10px'
-                }}>
-                    {/* Fullscreen button */}
-                    <button
-                        onClick={toggleFullscreen}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '8px',
-                            backgroundColor: '#333',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        {isFullscreen ? (
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-                            </svg>
-                        ) : (
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                            </svg>
-                        )}
-                    </button>
-
-                    {/* Color selector */}
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '5px'
-                    }}>
-                        <label style={{ color: 'white', fontSize: '12px' }}>Model Color</label>
-                        <div style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            justifyContent: 'center',
-                            gap: '5px'
-                        }}>
-                            {colorOptions.map((color) => (
-                                <button
-                                    key={color.value}
-                                    onClick={() => updateModelColor(color.value)}
-                                    title={color.name}
-                                    style={{
-                                        width: '24px',
-                                        height: '24px',
-                                        backgroundColor: color.value,
-                                        border: modelColor === color.value ? '2px solid white' : '1px solid #ccc',
-                                        borderRadius: '50%',
-                                        cursor: 'pointer',
-                                        padding: 0
-                                    }}
-                                />
-                            ))}
-                        </div>
-                        {/* Custom color picker */}
-                        <input
-                            type="color"
-                            value={modelColor}
-                            onChange={(e) => updateModelColor(e.target.value)}
-                            style={{
-                                width: '24px',
-                                height: '24px',
-                                padding: 0,
-                                border: 'none',
-                                marginTop: '5px'
-                            }}
-                            title="Custom color"
-                        />
-                    </div>
-                </div>
+                <ViewerControls
+                    isFullscreen={isFullscreen}
+                    toggleFullscreen={toggleFullscreen}
+                >
+                    <ColorSelector
+                        currentColor={modelColor}
+                        onColorChange={updateModelColor}
+                    />
+                </ViewerControls>
             )}
 
             {loading && (
