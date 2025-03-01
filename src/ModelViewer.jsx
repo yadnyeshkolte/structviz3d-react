@@ -17,6 +17,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const modelRef = useRef(null);
     const rendererRef = useRef(null);
     const lightsRef = useRef([]);
+    const controlsRef = useRef(null);
 
     // Toggle fullscreen
     const toggleFullscreen = () => {
@@ -58,6 +59,55 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             });
         }
     };
+
+    useEffect(() => {
+        // Cleanup function to dispose resources
+        // This is important for memory management and will run when component unmounts
+        // or when modelUrl changes (to load a new model)
+        return () => {
+            // Dispose of the previous model if it exists
+            if (modelRef.current) {
+                modelRef.current.traverse((child) => {
+                    if (child.isMesh) {
+                        if (child.geometry) {
+                            child.geometry.dispose();
+                        }
+
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(material => {
+                                if (material.map) material.map.dispose();
+                                material.dispose();
+                            });
+                        } else if (child.material) {
+                            if (child.material.map) child.material.map.dispose();
+                            child.material.dispose();
+                        }
+                    }
+                });
+            }
+
+            // Dispose of renderer
+            if (rendererRef.current) {
+                rendererRef.current.dispose();
+                rendererRef.current.forceContextLoss();
+            }
+
+            // Clear scene
+            if (sceneRef.current) {
+                sceneRef.current.clear();
+            }
+
+            // Dispose of controls
+            if (controlsRef.current) {
+                controlsRef.current.dispose();
+            }
+
+            // Cancel any animation frame
+            if (window.animationFrameId) {
+                cancelAnimationFrame(window.animationFrameId);
+            }
+        };
+    }, [modelUrl]);
 
     useEffect(() => {
         if (!container || !modelUrl) return;
@@ -112,6 +162,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             controls.enablePan = true;
             controls.target.set(0, 0, 0);
             controls.update();
+            controlsRef.current = controls;
 
             // Add comprehensive lighting setup
             setupLighting(scene);
@@ -258,7 +309,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         };
 
         const animate = () => {
-            animationFrameId = requestAnimationFrame(animate);
+            window.animationFrameId = requestAnimationFrame(animate);
 
             if (controls) {
                 controls.update();
@@ -293,27 +344,18 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         return () => {
             window.removeEventListener('resize', handleResize);
             document.removeEventListener('fullscreenchange', fullscreenChangeHandler);
-            cancelAnimationFrame(animationFrameId);
 
-            if (model && scene) {
-                scene.remove(model);
+            if (window.animationFrameId) {
+                cancelAnimationFrame(window.animationFrameId);
             }
-
-            if (renderer && renderer.domElement && container.contains(renderer.domElement)) {
-                container.removeChild(renderer.domElement);
-            }
-
-            renderer?.dispose();
-            controls?.dispose();
         };
     }, [container, modelUrl, binUrl, onLoad, modelColor]);
 
     return (
-        <div className="model-viewer-wrapper" style={{ width: '100vw', maxWidth: '100%', marginLeft: 'calc(0%)', position: 'relative' }}>
+        <div className="model-viewer-wrapper">
             <div
                 ref={setContainer}
                 className="model-viewer-container"
-                style={{ width: '100%', height: '70vh', minHeight: '500px', position: 'relative' }}
             />
 
             {/* Controls Overlay */}
@@ -330,29 +372,19 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             )}
 
             {loading && (
-                <div className="loading-overlay" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(245, 245, 245, 0.7)' }}>
-                    <div className="spinner" style={{ width: '50px', height: '50px', border: '5px solid #f3f3f3', borderTop: '5px solid #3498db', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                <div className="loading-overlay">
+                    <div className="spinner"></div>
                     <p>Loading model...</p>
                 </div>
             )}
 
             {error && (
-                <div className="error-message" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'rgba(255, 0, 0, 0.1)', padding: '20px', borderRadius: '5px', color: 'red' }}>
+                <div className="error-message">
                     <p>{error}</p>
                 </div>
             )}
         </div>
     );
 };
-
-// Add a CSS animation for the spinner
-const styleElement = document.createElement('style');
-styleElement.textContent = `
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-`;
-document.head.appendChild(styleElement);
 
 export default ModelViewer;

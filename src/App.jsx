@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import './App.css';
 import FileUpload from './FileUpload';
 import ModelViewer from './ModelViewer';
+import { ArrowLeft, Upload } from 'lucide-react';
 
 function App() {
     const [modelUrl, setModelUrl] = useState(null);
     const [binUrl, setBinUrl] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [showUploadScreen, setShowUploadScreen] = useState(true);
 
     const handleModelLoad = (data) => {
         setIsLoading(true);
@@ -17,38 +19,53 @@ function App() {
 
         setModelUrl(modelUrl);
         setBinUrl(binUrl);
+        setShowUploadScreen(false);
+    };
+
+    const handleNewUpload = () => {
+        // Clear the cached model
+        setModelUrl(null);
+        setBinUrl(null);
+        setShowUploadScreen(true);
     };
 
     return (
         <div className="App">
-            <header className="App-header">
-                <h1>StructViz3D</h1>
-                <p>Upload and view your structural engineering models in 3D</p>
-            </header>
+            {showUploadScreen ? (
+                <div className="upload-screen">
+                    <div className="upload-content">
+                        <header className="App-header">
+                            <h1>StructViz3D</h1>
+                            <p>Upload and view your structural engineering models in 3D</p>
+                        </header>
 
-            <main className="App-main">
-                <div className="upload-section">
-                    <FileUpload onModelLoad={handleModelLoad} />
+                        <div className="upload-section-fullscreen">
+                            <FileUpload onModelLoad={handleModelLoad} />
+                        </div>
+
+                        <footer className="App-footer">
+                            <p>StructViz3D &copy; {new Date().getFullYear()}</p>
+                        </footer>
+                    </div>
                 </div>
+            ) : (
+                <div className="viewer-screen">
+                    <div className="new-upload-button">
+                        <button onClick={handleNewUpload} className="back-button" title="Upload new model">
+                            <Upload size={20} />
+                            <span>New Upload</span>
+                        </button>
+                    </div>
 
-                <div className="viewer-section">
-                    {modelUrl ? (
+                    <div className="fullscreen-viewer">
                         <ModelViewer
                             modelUrl={modelUrl}
                             binUrl={binUrl}
                             onLoad={() => setIsLoading(false)}
                         />
-                    ) : (
-                        <div className="viewer-placeholder">
-                            <p>Upload an STL file to view the 3D model</p>
-                        </div>
-                    )}
+                    </div>
                 </div>
-            </main>
-
-            <footer className="App-footer">
-                <p>StructViz3D &copy; {new Date().getFullYear()}</p>
-            </footer>
+            )}
         </div>
     );
 }
