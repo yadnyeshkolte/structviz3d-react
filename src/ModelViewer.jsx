@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
-const ModelViewer = ({ modelUrl, binUrl }) => {
+const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [container, setContainer] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -47,6 +47,7 @@ const ModelViewer = ({ modelUrl, binUrl }) => {
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.25;
+            controls.target.set(0, 0, 0); // Ensure controls are targeting the center
 
             // Add lights
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -56,7 +57,7 @@ const ModelViewer = ({ modelUrl, binUrl }) => {
             directionalLight.position.set(1, 1, 1);
             scene.add(directionalLight);
 
-            // Add grid helper
+            // Add grid helper centered at origin
             const gridHelper = new THREE.GridHelper(10, 10);
             scene.add(gridHelper);
 
@@ -86,20 +87,49 @@ const ModelViewer = ({ modelUrl, binUrl }) => {
 
                     model = gltf.scene;
 
-                    // Center and scale model
+                    // Create a group to hold the model
+                    const modelGroup = new THREE.Group();
+                    scene.add(modelGroup);
+                    modelGroup.add(model);
+
+                    // Calculate bounding box to center the model
                     const box = new THREE.Box3().setFromObject(model);
                     const center = box.getCenter(new THREE.Vector3());
-                    model.position.sub(center);
 
+                    // Move the model itself (not the group) to center it within the group
+                    model.position.set(-center.x, -center.y, -center.z);
+
+                    // The group is now at the origin (0,0,0) and the model is centered within it
+
+                    // Calculate size for scaling
                     const size = box.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
                     if (maxDim > 0) {
                         const scale = 3 / maxDim;
-                        model.scale.multiplyScalar(scale);
+                        modelGroup.scale.set(scale, scale, scale);
                     }
 
-                    scene.add(model);
+                    // Set model material color to improve visibility
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            // Create a new material with specific color if needed
+                            child.material.color = new THREE.Color(0x666666); // Medium gray color
+                            child.material.needsUpdate = true;
+                        }
+                    });
+
+                    // Reset camera and controls to look at center
+                    camera.position.set(0, 2, 5);
+                    camera.lookAt(0, 0, 0);
+                    controls.target.set(0, 0, 0);
+                    controls.update();
+
                     setLoading(false);
+
+                    // Call onLoad callback if provided
+                    if (typeof onLoad === 'function') {
+                        onLoad();
+                    }
                 },
                 (xhr) => {
                     // Loading progress
@@ -156,7 +186,7 @@ const ModelViewer = ({ modelUrl, binUrl }) => {
             renderer?.dispose();
             controls?.dispose();
         };
-    }, [container, modelUrl, binUrl]);
+    }, [container, modelUrl, binUrl, onLoad]);
 
     return (
         <div className="model-viewer-wrapper">

@@ -8,8 +8,13 @@ function App() {
     const [binUrl, setBinUrl] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleModelLoad = (modelUrl, binUrl) => {
+    const handleModelLoad = (data) => {
         setIsLoading(true);
+
+        const apiBaseUrl = import.meta.env.VITE_APP_API_URL || '';
+        const modelUrl = `${apiBaseUrl}${data.download_url}`;
+        const binUrl = data.bin_url ? `${apiBaseUrl}${data.bin_url}` : null;
+
         setModelUrl(modelUrl);
         setBinUrl(binUrl);
     };
@@ -23,14 +28,7 @@ function App() {
 
             <main className="App-main">
                 <div className="upload-section">
-                    <FileUpload
-                        onModelLoad={(response) => {
-                            handleModelLoad(
-                                `${import.meta.env.VITE_APP_API_URL || ''}${response.download_url}`,
-                                `${import.meta.env.VITE_APP_API_URL || ''}${response.bin_url}`
-                            );
-                        }}
-                    />
+                    <FileUpload onModelLoad={handleModelLoad} />
                 </div>
 
                 <div className="viewer-section">
