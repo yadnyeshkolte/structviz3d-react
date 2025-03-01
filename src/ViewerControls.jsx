@@ -15,7 +15,9 @@ const ViewerControls = ({ children, isFullscreen, toggleFullscreen }) => {
             backdropFilter: 'blur(4px)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             transition: 'opacity 0.2s ease',
-            zIndex: 100
+            zIndex: 100,
+            maxHeight: '80vh',
+            overflowY: 'auto'
         }}>
             {/* Fullscreen button */}
             <button
@@ -58,7 +60,7 @@ const ViewerControls = ({ children, isFullscreen, toggleFullscreen }) => {
                 margin: '4px 0'
             }} />
 
-            {/* Children components (like ColorSelector) */}
+            {/* Children components (like ColorSelector and ViewControls) */}
             {children}
         </div>
     );

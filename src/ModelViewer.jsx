@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import ColorSelector from './ColorSelector';
 import ViewerControls from './ViewerControls';
+import ViewControls from './ViewControls';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 
 const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
@@ -12,6 +13,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [error, setError] = useState(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [modelColor, setModelColor] = useState('#666666'); // Default medium gray
+    const [animating, setAnimating] = useState(false);
 
     // Refs to store scene objects for color updates
     const sceneRef = useRef(null);
@@ -19,6 +21,9 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const rendererRef = useRef(null);
     const lightsRef = useRef([]);
     const controlsRef = useRef(null);
+    const cameraRef = useRef(null);
+    const animationRef = useRef(null);
+    const modelGroupRef = useRef(null);
 
     // Toggle fullscreen
     const toggleFullscreen = () => {
@@ -59,6 +64,109 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                 }
             });
         }
+    };
+
+    // Handle view changes
+    const handleViewChange = (view) => {
+        if (!cameraRef.current || !controlsRef.current || animating) return;
+
+        setAnimating(true);
+
+        // Calculate target (center of the model)
+        const target = new THREE.Vector3(0, 0, 0);
+
+        // Get bounding box of model to calculate distance
+        let modelSize = 5; // Default size
+        if (modelRef.current) {
+            const box = new THREE.Box3().setFromObject(modelRef.current);
+            const size = box.getSize(new THREE.Vector3());
+            modelSize = Math.max(size.x, size.y, size.z);
+        }
+
+        // Calculate camera distance based on model size
+        const distance = modelSize * 1.5;
+
+        // Define the new camera position based on view
+        let newPosition = new THREE.Vector3();
+
+        switch (view) {
+            case 'front':
+                newPosition.set(0, 0, distance);
+                break;
+            case 'back':
+                newPosition.set(0, 0, -distance);
+                break;
+            case 'left':
+                newPosition.set(-distance, 0, 0);
+                break;
+            case 'right':
+                newPosition.set(distance, 0, 0);
+                break;
+            case 'top':
+                newPosition.set(0, distance, 0);
+                break;
+            case 'bottom':
+                newPosition.set(0, -distance, 0);
+                break;
+            case 'isometric':
+                newPosition.set(distance * 0.7, distance * 0.7, distance * 0.7);
+                break;
+            default:
+                newPosition.set(0, distance * 0.5, distance);
+                break;
+        }
+
+        // Store starting position and orientation
+        const startPos = cameraRef.current.position.clone();
+        const startTarget = controlsRef.current.target.clone();
+
+        // Animation data
+        const duration = 1000; // ms
+        const startTime = Date.now();
+
+        // Cancel any ongoing animation
+        if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+        }
+
+        // Animation function
+        const animateCameraMove = () => {
+            const now = Date.now();
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Use an ease-out function for smoother slowing at the end
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+            // Interpolate position
+            const newPos = new THREE.Vector3().lerpVectors(
+                startPos,
+                newPosition,
+                easeProgress
+            );
+            cameraRef.current.position.copy(newPos);
+
+            // Interpolate target (for OrbitControls)
+            const newTarget = new THREE.Vector3().lerpVectors(
+                startTarget,
+                target,
+                easeProgress
+            );
+            controlsRef.current.target.copy(newTarget);
+
+            // Update controls
+            controlsRef.current.update();
+
+            // Continue animation if not complete
+            if (progress < 1) {
+                animationRef.current = requestAnimationFrame(animateCameraMove);
+            } else {
+                setAnimating(false);
+            }
+        };
+
+        // Start animation
+        animationRef.current = requestAnimationFrame(animateCameraMove);
     };
 
     useEffect(() => {
@@ -107,6 +215,11 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             if (window.animationFrameId) {
                 cancelAnimationFrame(window.animationFrameId);
             }
+
+            // Cancel any view animation
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
         };
     }, [modelUrl]);
 
@@ -133,6 +246,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                 1000
             );
             camera.position.set(0, 0, 5);
+            cameraRef.current = camera;
 
             // Setup renderer with improved settings
             renderer = new THREE.WebGLRenderer({
@@ -172,6 +286,11 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             const gridHelper = new THREE.GridHelper(10, 10, 0x808080, 0xDDDDDD);
             gridHelper.position.y = -0.01; // Slightly below model to avoid z-fighting
             scene.add(gridHelper);
+
+            // Add coordinate axes for orientation
+            const axesHelper = new THREE.AxesHelper(5);
+            axesHelper.position.y = 0.01; // Slightly above grid
+            scene.add(axesHelper);
 
             // Load model
             loadModel();
@@ -249,6 +368,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         const modelGroup = new THREE.Group();
                         scene.add(modelGroup);
                         modelGroup.add(model);
+                        modelGroupRef.current = modelGroup;
 
                         // Calculate bounding box to center the model
                         const box = new THREE.Box3().setFromObject(model);
@@ -269,11 +389,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         model.castShadow = true;
                         model.receiveShadow = true;
 
-                        // Reset camera and controls to look at center
-                        camera.position.set(0, 2, 5);
-                        camera.lookAt(0, 0, 0);
-                        controls.target.set(0, 0, 0);
-                        controls.update();
+                        // Reset camera and controls to isometric view
+                        handleViewChange('isometric');
 
                         setLoading(false);
 
@@ -294,7 +411,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     }
                 );
             } else {
-                // Use GLTFLoader for glTF files (existing code)
+                // Use GLTFLoader for glTF files
                 const loader = new GLTFLoader();
 
                 // We need to make sure the model can find its associated binary file
@@ -304,8 +421,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                 loader.load(
                     modelUrl,
                     (gltf) => {
-                        // Original GLTF loading code continues...
-                        // (keep the original code for GLTF loading here)
                         // Remove any existing model
                         if (model) {
                             scene.remove(model);
@@ -318,6 +433,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         const modelGroup = new THREE.Group();
                         scene.add(modelGroup);
                         modelGroup.add(model);
+                        modelGroupRef.current = modelGroup;
 
                         // Calculate bounding box to center the model
                         const box = new THREE.Box3().setFromObject(model);
@@ -357,11 +473,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                             }
                         });
 
-                        // Reset camera and controls to look at center
-                        camera.position.set(0, 2, 5);
-                        camera.lookAt(0, 0, 0);
-                        controls.target.set(0, 0, 0);
-                        controls.update();
+                        // Reset camera to isometric view
+                        handleViewChange('isometric');
 
                         setLoading(false);
 
@@ -443,6 +556,10 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     <ColorSelector
                         currentColor={modelColor}
                         onColorChange={updateModelColor}
+                    />
+
+                    <ViewControls
+                        onViewChange={handleViewChange}
                     />
                 </ViewerControls>
             )}
