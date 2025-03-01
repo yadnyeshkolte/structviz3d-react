@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './App.css';
 import FileUpload from './FileUpload';
 import ModelViewer from './ModelViewer';
-import { ArrowLeft, Upload } from 'lucide-react';
+import { Upload, LayoutTemplate } from 'lucide-react';
 
 function App() {
     const [modelUrl, setModelUrl] = useState(null);
@@ -19,6 +19,13 @@ function App() {
 
         setModelUrl(modelUrl);
         setBinUrl(binUrl);
+        setShowUploadScreen(false);
+    };
+
+    const handleSampleModel = () => {
+        setIsLoading(true);
+        setModelUrl('/src/assets/transformer.stl');
+        setBinUrl(null);
         setShowUploadScreen(false);
     };
 
@@ -39,8 +46,25 @@ function App() {
                             <p>Upload and view your structural engineering models in 3D</p>
                         </header>
 
-                        <div className="upload-section-fullscreen">
-                            <FileUpload onModelLoad={handleModelLoad} />
+                        <div className="options-container">
+                            <div className="option-card" onClick={handleSampleModel}>
+                                <div className="option-icon">
+                                    <LayoutTemplate size={48} />
+                                </div>
+                                <h2>Try Sample Model</h2>
+                                <p>Test the viewer with our pre-loaded transformer model</p>
+                            </div>
+
+                            <div className="option-card">
+                                <div className="option-icon">
+                                    <Upload size={48} />
+                                </div>
+                                <h2>Upload Your Model</h2>
+                                <p>Upload your own STL file to view in 3D</p>
+                                <div className="upload-section">
+                                    <FileUpload onModelLoad={handleModelLoad} />
+                                </div>
+                            </div>
                         </div>
 
                         <footer className="App-footer">

@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import ColorSelector from './ColorSelector';
 import ViewerControls from './ViewerControls';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 
 const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [container, setContainer] = useState(null);
@@ -222,90 +223,165 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         };
 
         const loadModel = () => {
-            const loader = new GLTFLoader();
-
-            // We need to make sure the model can find its associated binary file
-            const resourcePath = modelUrl.substring(0, modelUrl.lastIndexOf('/') + 1);
-            loader.setResourcePath(resourcePath);
-
-            loader.load(
-                modelUrl,
-                (gltf) => {
-                    // Remove any existing model
-                    if (model) {
-                        scene.remove(model);
-                    }
-
-                    model = gltf.scene;
-                    modelRef.current = model;
-
-                    // Create a group to hold the model
-                    const modelGroup = new THREE.Group();
-                    scene.add(modelGroup);
-                    modelGroup.add(model);
-
-                    // Calculate bounding box to center the model
-                    const box = new THREE.Box3().setFromObject(model);
-                    const center = box.getCenter(new THREE.Vector3());
-
-                    // Move the model itself (not the group) to center it within the group
-                    model.position.set(-center.x, -center.y, -center.z);
-
-                    // Calculate size for scaling
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    if (maxDim > 0) {
-                        const scale = 3 / maxDim;
-                        modelGroup.scale.set(scale, scale, scale);
-                    }
-
-                    // Enable shadows on all meshes
-                    model.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-
-                            // Set material properties for better rendering
-                            if (Array.isArray(child.material)) {
-                                child.material.forEach(mat => {
-                                    mat.color = new THREE.Color(modelColor);
-                                    mat.roughness = 0.7;
-                                    mat.metalness = 0.3;
-                                    mat.needsUpdate = true;
-                                });
-                            } else {
-                                child.material.color = new THREE.Color(modelColor);
-                                child.material.roughness = 0.7;
-                                child.material.metalness = 0.3;
-                                child.material.needsUpdate = true;
-                            }
+            if (modelUrl.toLowerCase().endsWith('.stl')) {
+                // Use STLLoader for STL files
+                const loader = new STLLoader();
+                loader.load(
+                    modelUrl,
+                    (geometry) => {
+                        // Remove any existing model
+                        if (model) {
+                            scene.remove(model);
                         }
-                    });
 
-                    // Reset camera and controls to look at center
-                    camera.position.set(0, 2, 5);
-                    camera.lookAt(0, 0, 0);
-                    controls.target.set(0, 0, 0);
-                    controls.update();
+                        // Create a standard material for the STL
+                        const material = new THREE.MeshStandardMaterial({
+                            color: new THREE.Color(modelColor),
+                            roughness: 0.7,
+                            metalness: 0.3
+                        });
 
-                    setLoading(false);
+                        // Create mesh with the loaded geometry
+                        model = new THREE.Mesh(geometry, material);
+                        modelRef.current = model;
 
-                    // Call onLoad callback if provided
-                    if (typeof onLoad === 'function') {
-                        onLoad();
+                        // Create a group to hold the model
+                        const modelGroup = new THREE.Group();
+                        scene.add(modelGroup);
+                        modelGroup.add(model);
+
+                        // Calculate bounding box to center the model
+                        const box = new THREE.Box3().setFromObject(model);
+                        const center = box.getCenter(new THREE.Vector3());
+
+                        // Move the model itself (not the group) to center it within the group
+                        model.position.set(-center.x, -center.y, -center.z);
+
+                        // Calculate size for scaling
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        if (maxDim > 0) {
+                            const scale = 3 / maxDim;
+                            modelGroup.scale.set(scale, scale, scale);
+                        }
+
+                        // Enable shadows
+                        model.castShadow = true;
+                        model.receiveShadow = true;
+
+                        // Reset camera and controls to look at center
+                        camera.position.set(0, 2, 5);
+                        camera.lookAt(0, 0, 0);
+                        controls.target.set(0, 0, 0);
+                        controls.update();
+
+                        setLoading(false);
+
+                        // Call onLoad callback if provided
+                        if (typeof onLoad === 'function') {
+                            onLoad();
+                        }
+                    },
+                    (xhr) => {
+                        // Loading progress
+                        const progress = (xhr.loaded / xhr.total) * 100;
+                        console.log(`${progress.toFixed(2)}% loaded`);
+                    },
+                    (error) => {
+                        console.error('Error loading model:', error);
+                        setError('Failed to load the model. Please try again.');
+                        setLoading(false);
                     }
-                },
-                (xhr) => {
-                    // Loading progress
-                    const progress = (xhr.loaded / xhr.total) * 100;
-                    console.log(`${progress.toFixed(2)}% loaded`);
-                },
-                (error) => {
-                    console.error('Error loading model:', error);
-                    setError('Failed to load the model. Please try again.');
-                    setLoading(false);
-                }
-            );
+                );
+            } else {
+                // Use GLTFLoader for glTF files (existing code)
+                const loader = new GLTFLoader();
+
+                // We need to make sure the model can find its associated binary file
+                const resourcePath = modelUrl.substring(0, modelUrl.lastIndexOf('/') + 1);
+                loader.setResourcePath(resourcePath);
+
+                loader.load(
+                    modelUrl,
+                    (gltf) => {
+                        // Original GLTF loading code continues...
+                        // (keep the original code for GLTF loading here)
+                        // Remove any existing model
+                        if (model) {
+                            scene.remove(model);
+                        }
+
+                        model = gltf.scene;
+                        modelRef.current = model;
+
+                        // Create a group to hold the model
+                        const modelGroup = new THREE.Group();
+                        scene.add(modelGroup);
+                        modelGroup.add(model);
+
+                        // Calculate bounding box to center the model
+                        const box = new THREE.Box3().setFromObject(model);
+                        const center = box.getCenter(new THREE.Vector3());
+
+                        // Move the model itself (not the group) to center it within the group
+                        model.position.set(-center.x, -center.y, -center.z);
+
+                        // Calculate size for scaling
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        if (maxDim > 0) {
+                            const scale = 3 / maxDim;
+                            modelGroup.scale.set(scale, scale, scale);
+                        }
+
+                        // Enable shadows on all meshes
+                        model.traverse((child) => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+
+                                // Set material properties for better rendering
+                                if (Array.isArray(child.material)) {
+                                    child.material.forEach(mat => {
+                                        mat.color = new THREE.Color(modelColor);
+                                        mat.roughness = 0.7;
+                                        mat.metalness = 0.3;
+                                        mat.needsUpdate = true;
+                                    });
+                                } else {
+                                    child.material.color = new THREE.Color(modelColor);
+                                    child.material.roughness = 0.7;
+                                    child.material.metalness = 0.3;
+                                    child.material.needsUpdate = true;
+                                }
+                            }
+                        });
+
+                        // Reset camera and controls to look at center
+                        camera.position.set(0, 2, 5);
+                        camera.lookAt(0, 0, 0);
+                        controls.target.set(0, 0, 0);
+                        controls.update();
+
+                        setLoading(false);
+
+                        // Call onLoad callback if provided
+                        if (typeof onLoad === 'function') {
+                            onLoad();
+                        }
+                    },
+                    (xhr) => {
+                        // Loading progress
+                        const progress = (xhr.loaded / xhr.total) * 100;
+                        console.log(`${progress.toFixed(2)}% loaded`);
+                    },
+                    (error) => {
+                        console.error('Error loading model:', error);
+                        setError('Failed to load the model. Please try again.');
+                        setLoading(false);
+                    }
+                );
+            }
         };
 
         const animate = () => {
