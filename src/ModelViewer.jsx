@@ -737,10 +737,19 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         return cleanupResources;
     }, [modelUrl, cleanupResources]);
 
+    useEffect(() => {
+        const handleMouseMove = () => {
+            showControls();
+        };
+        container?.addEventListener('mousemove', handleMouseMove);
+        return () => {
+            container?.removeEventListener('mousemove', handleMouseMove);
+        };
+    }, [showControls]);
+
     // Effect to initialize Three.js
     useEffect(() => {
         initThreeJS();
-
         // Window resize event listener
         window.addEventListener('resize', handleResize);
 
@@ -750,22 +759,16 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         };
         document.addEventListener('fullscreenchange', fullscreenChangeHandler);
 
-        const handleMouseMove = () => {
-            showControls();
-        };
-
-        container?.addEventListener('mousemove', handleMouseMove);
-
         return () => {
             window.removeEventListener('resize', handleResize);
             document.removeEventListener('fullscreenchange', fullscreenChangeHandler);
             cleanupResources();
-            container?.removeEventListener('mousemove', handleMouseMove);
+
             if (controlsTimeoutRef.current) {
                 clearTimeout(controlsTimeoutRef.current);
             }
         };
-    }, [container, modelUrl, binUrl, handleResize, cleanupResources, initThreeJS, showControls]);
+    }, [container, modelUrl, binUrl, handleResize, cleanupResources, initThreeJS]);
 
     // Add event listener for keyboard shortcuts
     useEffect(() => {
