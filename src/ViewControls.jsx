@@ -1,14 +1,16 @@
 import React from 'react';
 
 const ViewControls = ({ onViewChange }) => {
+    // Engineering-style view icons
     const views = [
-        { name: 'Front', icon: '⬆', view: 'front' },
-        { name: 'Back', icon: '⬇', view: 'back' },
-        { name: 'Left', icon: '⬅', view: 'left' },
-        { name: 'Right', icon: '➡', view: 'right' },
-        { name: 'Top', icon: '⊥', view: 'top' },
-        { name: 'Bottom', icon: '⊤', view: 'bottom' },
-        { name: 'Isometric', icon: '⬣', view: 'isometric' }
+        { name: 'Front', icon: '↑', view: 'front' },
+        { name: 'Back', icon: '↓', view: 'back' },
+        { name: 'Left', icon: '←', view: 'left' },
+        { name: 'Right', icon: '→', view: 'right' },
+        { name: 'Top', icon: '⌄', view: 'top' },
+        { name: 'Bottom', icon: '⌃', view: 'bottom' },
+        { name: 'Isometric', icon: '⬦', view: 'isometric' },
+        { name: 'Frame All', icon: '⤧', view: 'frame' }
     ];
 
     return (

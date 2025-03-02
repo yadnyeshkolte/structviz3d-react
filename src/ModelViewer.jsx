@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -6,6 +6,8 @@ import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import ColorSelector from './ColorSelector';
 import ViewerControls from './ViewerControls';
 import ViewControls from './ViewControls';
+import CameraControls from './CameraControls';
+import KeyboardShortcuts from './KeyboardShortcuts';
 
 // Constants
 const DEFAULT_COLOR = '#666666';
@@ -22,6 +24,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [modelColor, setModelColor] = useState(DEFAULT_COLOR);
     const [animating, setAnimating] = useState(false);
     const [initialPositionSet, setInitialPositionSet] = useState(false);
+    const [isOrthographic, setIsOrthographic] = useState(false);
 
     // Refs
     const sceneRef = useRef(null);
@@ -33,6 +36,47 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const animationRef = useRef(null);
     const modelGroupRef = useRef(null);
     const animationFrameIdRef = useRef(null);
+    const perspectiveCameraRef = useRef(null);
+    const orthographicCameraRef = useRef(null);
+    const currentCameraRef = useRef(null); // Points to active camera
+
+
+    const toggleCameraMode = useCallback(() => {
+        setIsOrthographic(prev => !prev);
+
+        if (!isOrthographic) {
+            // Switching to orthographic
+            if (!orthographicCameraRef.current) {
+                // Create orthographic camera if it doesn't exist
+                const aspect = container.clientWidth / container.clientHeight;
+                const frustumSize = 10;
+                const camera = new THREE.OrthographicCamera(
+                    frustumSize * aspect / -2,
+                    frustumSize * aspect / 2,
+                    frustumSize / 2,
+                    frustumSize / -2,
+                    0.1,
+                    1000
+                );
+                camera.position.copy(perspectiveCameraRef.current.position);
+                camera.rotation.copy(perspectiveCameraRef.current.rotation);
+                orthographicCameraRef.current = camera;
+            }
+            currentCameraRef.current = orthographicCameraRef.current;
+
+            // Update controls to use orthographic camera
+            controlsRef.current.object = orthographicCameraRef.current;
+        } else {
+            // Switching to perspective
+            currentCameraRef.current = perspectiveCameraRef.current;
+
+            // Update controls to use perspective camera
+            controlsRef.current.object = perspectiveCameraRef.current;
+        }
+
+        // Update controls and reset target
+        controlsRef.current.update();
+    }, [isOrthographic, container]);
 
     // Toggle fullscreen - memoized to prevent recreating on every render
     const toggleFullscreen = useCallback(() => {
@@ -90,7 +134,32 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     // Handle view changes - memoized
     const handleViewChange = useCallback((view) => {
         if (!cameraRef.current || !controlsRef.current || animating) return;
+        if (view === 'frame') {
+            setAnimating(true);
 
+            // Get bounding box of the model
+            const box = new THREE.Box3().setFromObject(modelRef.current);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+
+            // Calculate optimal distance
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = currentCameraRef.current.fov * (Math.PI / 180);
+            let distance = maxDim / (2 * Math.tan(fov / 2));
+
+            // Add a bit of padding
+            distance *= 1.2;
+
+            // Get isometric direction
+            const direction = new THREE.Vector3(1, 1, 1).normalize();
+
+            // Calculate new position
+            const position = center.clone().add(direction.multiplyScalar(distance));
+
+            // Animate to the new position
+            animateCamera(position, center);
+            return;
+        }
         setAnimating(true);
 
         // Calculate target (center of the model)
@@ -158,6 +227,59 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         // Start animation
         animationRef.current = requestAnimationFrame(animateCameraMove);
     }, [animating, calculateViewPosition]);
+
+    const animateCamera = useCallback((newPosition, targetPosition) => {
+        // Store starting position and orientation
+        const startPos = currentCameraRef.current.position.clone();
+        const startTarget = controlsRef.current.target.clone();
+
+        // Cancel any ongoing animation
+        if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+        }
+
+        // Animation start time
+        const startTime = Date.now();
+
+        // Animation function
+        const animateCameraMove = () => {
+            const now = Date.now();
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+
+            // Use an ease-out function for smoother slowing at the end
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+            // Interpolate position
+            const newPos = new THREE.Vector3().lerpVectors(
+                startPos,
+                newPosition,
+                easeProgress
+            );
+            currentCameraRef.current.position.copy(newPos);
+
+            // Interpolate target
+            const newTarget = new THREE.Vector3().lerpVectors(
+                startTarget,
+                targetPosition,
+                easeProgress
+            );
+            controlsRef.current.target.copy(newTarget);
+
+            // Update controls
+            controlsRef.current.update();
+
+            // Continue animation if not complete
+            if (progress < 1) {
+                animationRef.current = requestAnimationFrame(animateCameraMove);
+            } else {
+                setAnimating(false);
+            }
+        };
+
+        // Start animation
+        animationRef.current = requestAnimationFrame(animateCameraMove);
+    }, []);
 
     // Set optimal initial view based on model size
     const setOptimalInitialView = useCallback((model) => {
@@ -390,16 +512,70 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         }
     }, []);
 
-    // Handle window resize - memoized
     const handleResize = useCallback(() => {
-        if (!container || !rendererRef.current || !cameraRef.current) return;
+        if (!container || !rendererRef.current) return;
 
         const width = container.clientWidth;
         const height = container.clientHeight;
+        const aspect = width / height;
 
         rendererRef.current.setSize(width, height);
-        cameraRef.current.aspect = width / height;
-        cameraRef.current.updateProjectionMatrix();
+
+        // Update perspective camera
+        if (perspectiveCameraRef.current) {
+            perspectiveCameraRef.current.aspect = aspect;
+            perspectiveCameraRef.current.updateProjectionMatrix();
+        }
+
+        // Update orthographic camera
+        if (orthographicCameraRef.current) {
+            const frustumSize = 10;
+            orthographicCameraRef.current.left = frustumSize * aspect / -2;
+            orthographicCameraRef.current.right = frustumSize * aspect / 2;
+            orthographicCameraRef.current.top = frustumSize / 2;
+            orthographicCameraRef.current.bottom = frustumSize / -2;
+            orthographicCameraRef.current.updateProjectionMatrix();
+        }
+    }, [container]);
+
+
+    const handleZoom = useCallback((event) => {
+        event.preventDefault();
+
+        if (!controlsRef.current || !currentCameraRef.current || !container) return;
+
+        // Get mouse position in normalized device coordinates
+        const rect = container.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
+        const y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+        // Create raycaster and find intersection point with model
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(x, y), currentCameraRef.current);
+
+        // Check for intersections with model
+        const intersects = raycaster.intersectObject(modelRef.current, true);
+
+        if (intersects.length > 0) {
+            // Get zoom delta and direction
+            const zoomDelta = event.deltaY * -0.001;  // Adjust sensitivity here
+
+            // Calculate target position (the intersection point)
+            const targetPos = intersects[0].point;
+
+            // Move camera along the direction toward/away from the intersection point
+            const cameraPos = currentCameraRef.current.position;
+            const direction = new THREE.Vector3().subVectors(targetPos, cameraPos).normalize();
+            const distance = direction.multiplyScalar(zoomDelta * 10);
+
+            currentCameraRef.current.position.add(distance);
+            controlsRef.current.update();
+        } else {
+            // Fallback to default OrbitControls zoom
+            const zoomDelta = event.deltaY * 0.001;
+            controlsRef.current.zoom(Math.pow(0.95, -zoomDelta));
+            controlsRef.current.update();
+        }
     }, [container]);
 
     // Setup scene and initialize three.js
@@ -415,14 +591,17 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         sceneRef.current = scene;
 
         // Setup camera
-        const camera = new THREE.PerspectiveCamera(
+        const perspCamera = new THREE.PerspectiveCamera(
             75,
             container.clientWidth / container.clientHeight,
             0.1,
             1000
         );
-        camera.position.set(5, 5, 5);
-        cameraRef.current = camera;
+        perspCamera.position.set(5, 5, 5);
+        perspectiveCameraRef.current = perspCamera;
+        cameraRef.current = perspCamera; // For backward compatibility
+        currentCameraRef.current = perspCamera; // Active camera reference
+
 
         // Setup renderer
         const renderer = new THREE.WebGLRenderer({
@@ -445,16 +624,23 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         }
         container.appendChild(renderer.domElement);
 
-        // Setup controls
-        const controls = new OrbitControls(camera, renderer.domElement);
+        const controls = new OrbitControls(perspCamera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.25;
         controls.enableZoom = true;
         controls.enablePan = true;
+        controls.panSpeed = 0.8;
+        controls.zoomSpeed = 1.0;
+        controls.rotateSpeed = 0.8;
+        controls.mouseButtons = {
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN
+        };
         controls.target.set(0, 0, 0);
         controls.update();
         controlsRef.current = controls;
-
+        renderer.domElement?.removeEventListener('wheel', handleZoom);
         // Setup lighting
         lightsRef.current = setupLighting(scene);
 
@@ -509,11 +695,12 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             );
         }
 
-        // Start animation loop
         const animate = () => {
             animationFrameIdRef.current = requestAnimationFrame(animate);
-            if (controls) controls.update();
-            if (renderer && scene && camera) renderer.render(scene, camera);
+            if (controlsRef.current) controlsRef.current.update();
+            if (rendererRef.current && sceneRef.current && currentCameraRef.current) {
+                rendererRef.current.render(sceneRef.current, currentCameraRef.current);
+            }
         };
 
         animate();
@@ -551,6 +738,38 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         };
     }, [container, modelUrl, binUrl, handleResize, cleanupResources, initThreeJS]);
 
+
+    // Add event listener for keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            // Numpad keys
+            switch (event.code) {
+                case 'Numpad1':
+                    handleViewChange('front');
+                    break;
+                case 'Numpad3':
+                    handleViewChange('right');
+                    break;
+                case 'Numpad7':
+                    handleViewChange('top');
+                    break;
+                case 'Numpad5':
+                    toggleCameraMode();
+                    break;
+                case 'Home':
+                    handleViewChange('frame');
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [handleViewChange, toggleCameraMode]);
+
     return (
         <div className="model-viewer-wrapper">
             <div
@@ -569,9 +788,16 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         onColorChange={updateModelColor}
                     />
 
+                    <CameraControls
+                        isOrthographic={isOrthographic}
+                        toggleCameraMode={toggleCameraMode}
+                    />
+
                     <ViewControls
                         onViewChange={handleViewChange}
                     />
+
+                    <KeyboardShortcuts />
                 </ViewerControls>
             )}
 
