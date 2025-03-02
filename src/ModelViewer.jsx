@@ -8,6 +8,7 @@ import ViewerControls from './ViewerControls';
 import ViewControls from './ViewControls';
 import CameraControls from './CameraControls';
 import KeyboardShortcuts from './KeyboardShortcuts';
+import cameraStateManager from './CameraStateManager.js';
 
 // Constants
 const DEFAULT_COLOR = '#666666';
@@ -43,15 +44,15 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     // Animate camera helper function - defined before other callbacks that depend on it
     const animateCamera = useCallback((newPosition, targetPosition) => {
         // Store starting position and orientation
-        const startPos = currentCameraRef.current.position.clone();
+        const currentCamera = currentCameraRef.current;
+        if (!currentCamera || !controlsRef.current) return;
+        const startPos = currentCamera.position.clone();
         const startTarget = controlsRef.current.target.clone();
 
         // Cancel any ongoing animation
         if (animationRef.current) {
             cancelAnimationFrame(animationRef.current);
         }
-
-        // Animation start time
         const startTime = Date.now();
 
         // Animation function
@@ -60,7 +61,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             const elapsed = now - startTime;
             const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
 
-            // Use an ease-out function for smoother slowing at the end
             const easeProgress = 1 - Math.pow(1 - progress, 3);
 
             // Interpolate position
@@ -69,7 +69,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                 newPosition,
                 easeProgress
             );
-            currentCameraRef.current.position.copy(newPos);
+            currentCamera.position.copy(newPos);
 
             // Interpolate target
             const newTarget = new THREE.Vector3().lerpVectors(
@@ -91,6 +91,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         };
 
         // Start animation
+        setAnimating(true);
         animationRef.current = requestAnimationFrame(animateCameraMove);
     }, []);
 
@@ -134,42 +135,46 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         }
     }, [container]);
 
+    const getModelSize = useCallback(() => {
+        if (!modelRef.current) return 5;
+
+        const box = new THREE.Box3().setFromObject(modelRef.current);
+        const size = box.getSize(new THREE.Vector3());
+        return Math.max(size.x, size.y, size.z);
+    }, []);
+
     const toggleCameraMode = useCallback(() => {
-        setIsOrthographic(prev => !prev);
+        if (!orthographicCameraRef.current && container) {
+            // Create orthographic camera if it doesn't exist
+            const aspect = container.clientWidth / container.clientHeight;
+            const frustumSize = 10;
+            const camera = new THREE.OrthographicCamera(
+                frustumSize * aspect / -2,
+                frustumSize * aspect / 2,
+                frustumSize / 2,
+                frustumSize / -2,
+                0.1,
+                1000
+            );
+            camera.position.copy(perspectiveCameraRef.current.position);
+            camera.rotation.copy(perspectiveCameraRef.current.rotation);
+            orthographicCameraRef.current = camera;
 
-        if (!isOrthographic) {
-            // Switching to orthographic
-            if (!orthographicCameraRef.current && container) {
-                // Create orthographic camera if it doesn't exist
-                const aspect = container.clientWidth / container.clientHeight;
-                const frustumSize = 10;
-                const camera = new THREE.OrthographicCamera(
-                    frustumSize * aspect / -2,
-                    frustumSize * aspect / 2,
-                    frustumSize / 2,
-                    frustumSize / -2,
-                    0.1,
-                    1000
-                );
-                camera.position.copy(perspectiveCameraRef.current.position);
-                camera.rotation.copy(perspectiveCameraRef.current.rotation);
-                orthographicCameraRef.current = camera;
-            }
-            currentCameraRef.current = orthographicCameraRef.current;
-
-            // Update controls to use orthographic camera
-            controlsRef.current.object = orthographicCameraRef.current;
-        } else {
-            // Switching to perspective
-            currentCameraRef.current = perspectiveCameraRef.current;
-
-            // Update controls to use perspective camera
-            controlsRef.current.object = perspectiveCameraRef.current;
+            // Initialize both cameras in the manager
+            cameraStateManager.initialize(
+                perspectiveCameraRef.current,
+                orthographicCameraRef.current,
+                controlsRef.current,
+                getModelSize()
+            );
         }
 
-        // Update controls and reset target
-        controlsRef.current.update();
-    }, [isOrthographic, container]);
+        const isOrthographic = cameraStateManager.toggleCameraMode();
+        setIsOrthographic(isOrthographic);
+
+        // Update current camera reference
+        currentCameraRef.current = cameraStateManager.getCurrentCamera();
+    }, [container, getModelSize]);
 
     // Toggle fullscreen - memoized to prevent recreating on every render
     const toggleFullscreen = useCallback(() => {
@@ -228,7 +233,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
     // Handle view changes - memoized
     const handleViewChange = useCallback((view) => {
-        if (!cameraRef.current || !controlsRef.current || animating) return;
+        if (!controlsRef.current || animating) return;
+
         if (view === 'frame') {
             setAnimating(true);
 
@@ -239,11 +245,16 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
             // Calculate optimal distance
             const maxDim = Math.max(size.x, size.y, size.z);
-            const fov = currentCameraRef.current.fov * (Math.PI / 180);
-            let distance = maxDim / (2 * Math.tan(fov / 2));
+            let distance;
 
-            // Add a bit of padding
-            distance *= 1.2;
+            if (isOrthographic) {
+                // For orthographic, we just need enough space
+                distance = maxDim * 1.2;
+            } else {
+                // For perspective, calculate based on FOV
+                const fov = currentCameraRef.current.fov * (Math.PI / 180);
+                distance = maxDim / (2 * Math.tan(fov / 2)) * 1.2;
+            }
 
             // Get isometric direction
             const direction = new THREE.Vector3(1, 1, 1).normalize();
@@ -255,73 +266,25 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             animateCamera(position, center);
             return;
         }
+
         setAnimating(true);
 
         // Calculate target (center of the model)
         const target = new THREE.Vector3(0, 0, 0);
 
-        // Get model size
-        let modelSize = 5; // Default size
-        if (modelRef.current) {
-            const box = new THREE.Box3().setFromObject(modelRef.current);
-            const size = box.getSize(new THREE.Vector3());
-            modelSize = Math.max(size.x, size.y, size.z);
+        // Update model size in the camera manager if needed
+        const modelSize = getModelSize();
+        if (modelSize !== cameraStateManager.modelSize) {
+            cameraStateManager.updateModelSize(modelSize);
         }
 
         // Get new position based on view
-        const newPosition = calculateViewPosition(view, modelSize);
+        const newPosition = cameraStateManager.getPositionForView(view);
 
-        // Store starting position and orientation
-        const startPos = cameraRef.current.position.clone();
-        const startTarget = controlsRef.current.target.clone();
+        // Animate to the new position
+        animateCamera(newPosition, target);
+    }, [animating, getModelSize, isOrthographic, animateCamera]);
 
-        // Cancel any ongoing animation
-        if (animationRef.current) {
-            cancelAnimationFrame(animationRef.current);
-        }
-
-        // Animation start time
-        const startTime = Date.now();
-
-        // Animation function
-        const animateCameraMove = () => {
-            const now = Date.now();
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
-
-            // Use an ease-out function for smoother slowing at the end
-            const easeProgress = 1 - Math.pow(1 - progress, 3);
-
-            // Interpolate position
-            const newPos = new THREE.Vector3().lerpVectors(
-                startPos,
-                newPosition,
-                easeProgress
-            );
-            cameraRef.current.position.copy(newPos);
-
-            // Interpolate target
-            const newTarget = new THREE.Vector3().lerpVectors(
-                startTarget,
-                target,
-                easeProgress
-            );
-            controlsRef.current.target.copy(newTarget);
-
-            // Update controls
-            controlsRef.current.update();
-
-            // Continue animation if not complete
-            if (progress < 1) {
-                animationRef.current = requestAnimationFrame(animateCameraMove);
-            } else {
-                setAnimating(false);
-            }
-        };
-
-        // Start animation
-        animationRef.current = requestAnimationFrame(animateCameraMove);
-    }, [animating, calculateViewPosition, animateCamera]);
 
     // Set optimal initial view based on model size
     const setOptimalInitialView = useCallback((model) => {
@@ -570,7 +533,13 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             orthographicCameraRef.current.bottom = frustumSize / -2;
             orthographicCameraRef.current.updateProjectionMatrix();
         }
-    }, [container]);
+
+        // Update camera manager with current model size if possible
+        if (modelRef.current) {
+            const modelSize = getModelSize();
+            cameraStateManager.updateModelSize(modelSize);
+        }
+    }, [container, getModelSize]);
 
     // Setup scene and initialize three.js
     const initThreeJS = useCallback(() => {
@@ -593,8 +562,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         );
         perspCamera.position.set(5, 5, 5);
         perspectiveCameraRef.current = perspCamera;
-        cameraRef.current = perspCamera; // For backward compatibility
-        currentCameraRef.current = perspCamera; // Active camera reference
+        cameraRef.current = perspCamera;
+        currentCameraRef.current = perspCamera;
 
         // Setup renderer
         const renderer = new THREE.WebGLRenderer({
@@ -634,6 +603,19 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         controls.target.set(0, 0, 0);
         controls.update();
         controlsRef.current = controls;
+
+        // Initialize camera state manager
+        if (modelRef.current) {
+            const box = new THREE.Box3().setFromObject(modelRef.current);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            cameraStateManager.initialize(
+                perspCamera,
+                orthographicCameraRef.current, // Will be null initially
+                controls,
+                maxDim
+            );
+        }
 
         // Remove any existing wheel event listeners to prevent duplicates
         if (renderer.domElement) {
