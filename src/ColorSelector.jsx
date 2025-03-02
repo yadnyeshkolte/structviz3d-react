@@ -105,7 +105,7 @@ const ColorSelector = ({ currentColor, onColorChange }) => {
                         borderRadius: '8px',
                         boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
                         padding: '12px',
-                        zIndex: 1000,
+                        zIndex: 15,
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '10px'

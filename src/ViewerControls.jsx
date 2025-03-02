@@ -26,7 +26,7 @@ const ViewerControls = ({
             opacity: visible ? 1 : 0,
             transform: visible ? 'translateX(0)' : 'translateX(20px)',
             pointerEvents: visible ? 'auto' : 'none',
-            zIndex: 100,
+            zIndex: 10,
             maxHeight: '80vh',
             overflowY: 'auto'
         }}>
@@ -64,6 +64,11 @@ const ViewerControls = ({
                     </svg>
                 )}
             </button>
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                alignSelf: 'flex-end'
+            }}>
             {/* Fullscreen button */}
             <button
                 onClick={toggleFullscreen}
@@ -136,7 +141,7 @@ const ViewerControls = ({
                     <path d="M7 16h10"></path>
                 </svg>
             </button>
-
+            </div>
             {/* Divider line */}
             <div style={{
                 height: '1px',

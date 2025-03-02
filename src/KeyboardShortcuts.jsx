@@ -25,7 +25,7 @@ const KeyboardShortcuts = ({ isVisible, onClose }) => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 2000,
+            zIndex: 200,
             backdropFilter: 'blur(3px)'
         }}>
             <div style={{
