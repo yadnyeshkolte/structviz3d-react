@@ -248,12 +248,24 @@ body, html {
     gap: 12px;
     backdrop-filter: blur(4px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: opacity 0.2s ease;
+    transition: opacity 0.3s ease, transform 0.3s ease;
     z-index: 100;
 }
 
 .viewer-controls:hover {
     opacity: 1;
+}
+
+.viewer-controls.hidden {
+    opacity: 0;
+    transform: translateX(20px);
+    pointer-events: none;
+}
+
+.viewer-controls.visible {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
 }
 
 /* Fullscreen button */
@@ -382,6 +394,22 @@ body, html {
     font-weight: 500;
 }
 
+.controls-indicator {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 8px;
+    height: 8px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.controls-indicator.visible {
+    opacity: 1;
+}
 /* Responsive Design */
 @media (max-width: 768px) {
     .App-header h1 {
@@ -420,6 +448,13 @@ body, html {
         max-width: 100%;
     }
 
+    .viewer-controls {
+        top: 10px;
+        right: 10px;
+        max-width: 80%;
+        max-height: 70vh;
+    }
+
 }
 
 @media (max-width: 480px) {
@@ -434,5 +469,13 @@ body, html {
     .dropzone {
         padding: 20px 15px;
         min-height: 200px;
+    }
+    .viewer-controls {
+        /* For very small screens, position at bottom */
+        top: auto;
+        bottom: 10px;
+        right: 10px;
+        max-width: 85%;
+        max-height: 60vh;
     }
 }

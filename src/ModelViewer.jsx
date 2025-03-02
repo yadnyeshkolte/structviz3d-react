@@ -26,6 +26,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [animating, setAnimating] = useState(false);
     const [initialPositionSet, setInitialPositionSet] = useState(false);
     const [isOrthographic, setIsOrthographic] = useState(false);
+    const [controlsVisible, setControlsVisible] = useState(true);
+    const [controlsLocked, setControlsLocked] = useState(false);
 
     // Refs
     const sceneRef = useRef(null);
@@ -40,6 +42,33 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const perspectiveCameraRef = useRef(null);
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
+    const controlsTimeoutRef = useRef(null);
+
+    const showControls = useCallback(() => {
+        setControlsVisible(true);
+
+        // Clear any existing timeout
+        if (controlsTimeoutRef.current) {
+            clearTimeout(controlsTimeoutRef.current);
+        }
+
+        // Set a new timeout if controls aren't locked
+        if (!controlsLocked) {
+            controlsTimeoutRef.current = setTimeout(() => {
+                setControlsVisible(false);
+            }, 3000); // 3 seconds seconds of inactivity
+        }
+    }, [controlsLocked]);
+
+    const toggleControlsLock = useCallback(() => {
+        const newLockedState = !controlsLocked;
+        setControlsLocked(newLockedState);
+
+        // If unlocking, set timeout to hide
+        if (!newLockedState) {
+            showControls(); // This will reset the timeout
+        }
+    }, [controlsLocked, showControls]);
 
     // Animate camera helper function - defined before other callbacks that depend on it
     const animateCamera = useCallback((newPosition, targetPosition) => {
@@ -714,12 +743,22 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         };
         document.addEventListener('fullscreenchange', fullscreenChangeHandler);
 
+        const handleMouseMove = () => {
+            showControls();
+        };
+
+        container?.addEventListener('mousemove', handleMouseMove);
+
         return () => {
             window.removeEventListener('resize', handleResize);
             document.removeEventListener('fullscreenchange', fullscreenChangeHandler);
             cleanupResources();
+            container?.removeEventListener('mousemove', handleMouseMove);
+            if (controlsTimeoutRef.current) {
+                clearTimeout(controlsTimeoutRef.current);
+            }
         };
-    }, [container, modelUrl, binUrl, handleResize, cleanupResources, initThreeJS]);
+    }, [container, modelUrl, binUrl, handleResize, cleanupResources, initThreeJS, showControls]);
 
     // Add event listener for keyboard shortcuts
     useEffect(() => {
@@ -764,6 +803,9 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                 <ViewerControls
                     isFullscreen={isFullscreen}
                     toggleFullscreen={toggleFullscreen}
+                    visible={controlsVisible}
+                    locked={controlsLocked}
+                    onToggleLock={toggleControlsLock}
                 >
                     <ColorSelector
                         currentColor={modelColor}
@@ -781,6 +823,16 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
                     <KeyboardShortcuts />
                 </ViewerControls>
+            )}
+
+            {!controlsVisible && (
+                <div
+                    className="controls-indicator visible"
+                    onClick={() => {
+                        setControlsVisible(true);
+                        setControlsLocked(true);
+                    }}
+                />
             )}
 
             {loading && (
