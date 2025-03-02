@@ -5,12 +5,16 @@ const GridControls = ({
                           showXYGrid,
                           showYZGrid,
                           gridDivisions,
-                          gridColor,
+                          xzGridColor,
+                          xyGridColor,
+                          yzGridColor,
                           onToggleXZGrid,
                           onToggleXYGrid,
                           onToggleYZGrid,
                           onGridDivisionsChange,
-                          onGridColorChange
+                          onXZGridColorChange,
+                          onXYGridColorChange,
+                          onYZGridColorChange
                       }) => {
     return (
         <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -18,35 +22,59 @@ const GridControls = ({
 
             {/* Grid toggles */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', color: 'white', fontSize: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', color: 'white', fontSize: '12px' }}>
+                        <input
+                            type="checkbox"
+                            checked={showXZGrid}
+                            onChange={onToggleXZGrid}
+                            style={{ marginRight: '8px' }}
+                        />
+                        XZ Grid (Floor)
+                    </label>
                     <input
-                        type="checkbox"
-                        checked={showXZGrid}
-                        onChange={onToggleXZGrid}
-                        style={{ marginRight: '8px' }}
+                        type="color"
+                        value={xzGridColor}
+                        onChange={(e) => onXZGridColorChange(e.target.value)}
+                        style={{ width: '24px', height: '24px' }}
                     />
-                    XZ Grid (Floor)
-                </label>
+                </div>
 
-                <label style={{ display: 'flex', alignItems: 'center', color: 'white', fontSize: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', color: 'white', fontSize: '12px' }}>
+                        <input
+                            type="checkbox"
+                            checked={showXYGrid}
+                            onChange={onToggleXYGrid}
+                            style={{ marginRight: '8px' }}
+                        />
+                        XY Grid (Front)
+                    </label>
                     <input
-                        type="checkbox"
-                        checked={showXYGrid}
-                        onChange={onToggleXYGrid}
-                        style={{ marginRight: '8px' }}
+                        type="color"
+                        value={xyGridColor}
+                        onChange={(e) => onXYGridColorChange(e.target.value)}
+                        style={{ width: '24px', height: '24px' }}
                     />
-                    XY Grid (Front)
-                </label>
+                </div>
 
-                <label style={{ display: 'flex', alignItems: 'center', color: 'white', fontSize: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', color: 'white', fontSize: '12px' }}>
+                        <input
+                            type="checkbox"
+                            checked={showYZGrid}
+                            onChange={onToggleYZGrid}
+                            style={{ marginRight: '8px' }}
+                        />
+                        YZ Grid (Side)
+                    </label>
                     <input
-                        type="checkbox"
-                        checked={showYZGrid}
-                        onChange={onToggleYZGrid}
-                        style={{ marginRight: '8px' }}
+                        type="color"
+                        value={yzGridColor}
+                        onChange={(e) => onYZGridColorChange(e.target.value)}
+                        style={{ width: '24px', height: '24px' }}
                     />
-                    YZ Grid (Side)
-                </label>
+                </div>
             </div>
 
             {/* Grid density/divisions */}
@@ -61,17 +89,6 @@ const GridControls = ({
                     value={gridDivisions}
                     onChange={(e) => onGridDivisionsChange(parseInt(e.target.value))}
                     style={{ width: '100%' }}
-                />
-            </div>
-
-            {/* Grid color */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <label style={{ color: 'white', fontSize: '12px' }}>Grid Color:</label>
-                <input
-                    type="color"
-                    value={gridColor}
-                    onChange={(e) => onGridColorChange(e.target.value)}
-                    style={{ width: '24px', height: '24px' }}
                 />
             </div>
         </div>

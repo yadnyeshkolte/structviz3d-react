@@ -34,7 +34,9 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [showXYGrid, setShowXYGrid] = useState(false);
     const [showYZGrid, setShowYZGrid] = useState(false);
     const [gridDivisions, setGridDivisions] = useState(20);
-    const [gridColor, setGridColor] = useState('#CFCFCF');
+    const [xzGridColor, setXZGridColor] = useState('#CFCFCF');
+    const [xyGridColor, setXYGridColor] = useState('#8BC34A');  // Green
+    const [yzGridColor, setYZGridColor] = useState('#2196F3');  // Blue
 
     // Refs
     const sceneRef = useRef(null);
@@ -56,7 +58,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
 
 
-
     const createGrids = useCallback(() => {
         if (!sceneRef.current) return;
 
@@ -65,18 +66,17 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         if (xyGridRef.current) sceneRef.current.remove(xyGridRef.current);
         if (yzGridRef.current) sceneRef.current.remove(yzGridRef.current);
 
-        const color = new THREE.Color(gridColor);
         const gridSize = 10;
 
         // XZ Grid (floor)
-        const xzGrid = new THREE.GridHelper(gridSize, gridDivisions, color, color);
+        const xzGrid = new THREE.GridHelper(gridSize, gridDivisions, new THREE.Color(xzGridColor), new THREE.Color(xzGridColor));
         xzGrid.position.y = 0;
         xzGrid.visible = showXZGrid;
         sceneRef.current.add(xzGrid);
         xzGridRef.current = xzGrid;
 
         // XY Grid (front)
-        const xyGrid = new THREE.GridHelper(gridSize, gridDivisions, color, color);
+        const xyGrid = new THREE.GridHelper(gridSize, gridDivisions, new THREE.Color(xyGridColor), new THREE.Color(xyGridColor));
         xyGrid.rotation.x = Math.PI / 2; // Rotate to make vertical
         xyGrid.position.z = 0;
         xyGrid.visible = showXYGrid;
@@ -84,13 +84,13 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         xyGridRef.current = xyGrid;
 
         // YZ Grid (side)
-        const yzGrid = new THREE.GridHelper(gridSize, gridDivisions, color, color);
+        const yzGrid = new THREE.GridHelper(gridSize, gridDivisions, new THREE.Color(yzGridColor), new THREE.Color(yzGridColor));
         yzGrid.rotation.z = Math.PI / 2; // Rotate to make vertical
         yzGrid.position.x = 0;
         yzGrid.visible = showYZGrid;
         sceneRef.current.add(yzGrid);
         yzGridRef.current = yzGrid;
-    }, [gridDivisions, gridColor, showXZGrid, showXYGrid, showYZGrid]);
+    }, [gridDivisions, xzGridColor, xyGridColor, yzGridColor, showXZGrid, showXYGrid, showYZGrid]);
 
     const toggleXZGrid = useCallback(() => {
         setShowXZGrid(prev => !prev);
@@ -108,8 +108,16 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         setGridDivisions(value);
     }, []);
 
-    const handleGridColorChange = useCallback((color) => {
-        setGridColor(color);
+    const handleXZGridColorChange = useCallback((color) => {
+        setXZGridColor(color);
+    }, []);
+
+    const handleXYGridColorChange = useCallback((color) => {
+        setXYGridColor(color);
+    }, []);
+
+    const handleYZGridColorChange = useCallback((color) => {
+        setYZGridColor(color);
     }, []);
 
     const showControls = useCallback(() => {
@@ -517,7 +525,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             onProgress,
             onError
         );
-    }, [setupModel]);
+    },[setupModel]);
 
     // Load GLTF model
     const loadGLTFModel = useCallback((url, scene, onSuccess, onProgress, onError) => {
@@ -797,10 +805,10 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         if (yzGridRef.current) yzGridRef.current.visible = showYZGrid;
     }, [showXZGrid, showXYGrid, showYZGrid]);
 
-// Effect to recreate grids when divisions or color changes
+    // Effect to recreate grids when divisions or color changes
     useEffect(() => {
         createGrids();
-    }, [createGrids, gridDivisions, gridColor]);
+    }, [createGrids, gridDivisions, xzGridColor, xyGridColor, yzGridColor]);
 
     // Effect to reset initial position when model URL changes
     useEffect(() => {
@@ -915,12 +923,16 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         showXYGrid={showXYGrid}
                         showYZGrid={showYZGrid}
                         gridDivisions={gridDivisions}
-                        gridColor={gridColor}
+                        xzGridColor={xzGridColor}
+                        xyGridColor={xyGridColor}
+                        yzGridColor={yzGridColor}
                         onToggleXZGrid={toggleXZGrid}
                         onToggleXYGrid={toggleXYGrid}
                         onToggleYZGrid={toggleYZGrid}
                         onGridDivisionsChange={handleGridDivisionsChange}
-                        onGridColorChange={handleGridColorChange}
+                        onXZGridColorChange={handleXZGridColorChange}
+                        onXYGridColorChange={handleXYGridColorChange}
+                        onYZGridColorChange={handleYZGridColorChange}
                     />
                 </ViewerControls>
             )}
