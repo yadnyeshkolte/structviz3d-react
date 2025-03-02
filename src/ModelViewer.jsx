@@ -11,7 +11,7 @@ import KeyboardShortcuts from './KeyboardShortcuts';
 import cameraStateManager from './CameraStateManager.js';
 
 // Constants
-const DEFAULT_COLOR = '#666666';
+const DEFAULT_COLOR = '#999999';
 const ANIMATION_DURATION = 1000;
 const DEFAULT_SCALE_FACTOR = 3;
 const VIEW_DISTANCE_FACTOR = 1.5;
