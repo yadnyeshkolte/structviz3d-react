@@ -227,8 +227,10 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
     // Update model color - memoized callback
     const updateModelColor = useCallback((color) => {
+        // Update the state
         setModelColor(color);
 
+        // Update the model material without affecting camera
         if (!modelRef.current) return;
 
         modelRef.current.traverse((child) => {
@@ -448,7 +450,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             onProgress,
             onError
         );
-    }, [modelColor, setupModel]);
+    }, [setupModel]);
 
     // Load GLTF model
     const loadGLTFModel = useCallback((url, scene, onSuccess, onProgress, onError) => {
@@ -492,7 +494,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             onProgress,
             onError
         );
-    }, [modelColor, setupModel]);
+    }, [setupModel]);
 
     // Clean up resources
     const cleanupResources = useCallback(() => {

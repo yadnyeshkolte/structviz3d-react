@@ -8,26 +8,22 @@ const ColorSelector = ({ currentColor, onColorChange }) => {
     const colorPalette = [
         // First row - primary colors
         { name: 'Red', value: '#EA4335' },
-        { name: 'Blue', value: '#4285F4' },
         { name: 'Green', value: '#34A853' },
         { name: 'Yellow', value: '#FBBC05' },
 
         // Second row - secondary colors
         { name: 'Orange', value: '#FF9800' },
-        { name: 'Purple', value: '#673AB7' },
+        { name: 'Blue', value: '#4285F4' },
         { name: 'Teal', value: '#009688' },
-        { name: 'Pink', value: '#E91E63' },
 
         // Third row - grayscale
         { name: 'Dark Gray', value: '#333333' },
-        { name: 'Medium Gray', value: '#666666' },
         { name: 'Light Gray', value: '#999999' },
         { name: 'White', value: '#FFFFFF' },
 
         // Fourth row - additional colors
         { name: 'Cyan', value: '#00BCD4' },
         { name: 'Brown', value: '#795548' },
-        { name: 'Indigo', value: '#3F51B5' },
         { name: 'Lime', value: '#CDDC39' },
     ];
 
@@ -50,7 +46,7 @@ const ColorSelector = ({ currentColor, onColorChange }) => {
             <div className="color-selector-header" style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '5px',
                 marginBottom: '8px'
             }}>
                 <label style={{
@@ -97,15 +93,15 @@ const ColorSelector = ({ currentColor, onColorChange }) => {
                     ref={paletteRef}
                     className="color-palette"
                     style={{
-                        position: 'absolute',
+                        position: 'relative',
                         top: '45px',
                         right: '0',
-                        width: '220px',
+                        width: '180px',
                         backgroundColor: 'white',
                         borderRadius: '8px',
                         boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
                         padding: '12px',
-                        zIndex: 15,
+                        zIndex: 100,
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '10px'
@@ -114,7 +110,7 @@ const ColorSelector = ({ currentColor, onColorChange }) => {
                     {/* Preset colors grid */}
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(4, 1fr)',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
                         gap: '8px'
                     }}>
                         {colorPalette.map((color) => (

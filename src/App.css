@@ -252,6 +252,10 @@ body, html {
     z-index: 100;
 }
 
+::-webkit-scrollbar {
+    display: none;
+}
+
 .viewer-controls:hover {
     opacity: 1;
 }
