@@ -9,6 +9,7 @@ import ViewControls from './ViewControls';
 import CameraControls from './CameraControls';
 import KeyboardShortcuts from './KeyboardShortcuts';
 import cameraStateManager from './CameraStateManager.js';
+import GridControls from './GridControls';
 
 // Constants
 const DEFAULT_COLOR = '#999999';
@@ -29,6 +30,11 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [controlsVisible, setControlsVisible] = useState(true);
     const [controlsLocked, setControlsLocked] = useState(false);
     const [shortcutsVisible, setShortcutsVisible] = useState(false);
+    const [showXZGrid, setShowXZGrid] = useState(true);
+    const [showXYGrid, setShowXYGrid] = useState(false);
+    const [showYZGrid, setShowYZGrid] = useState(false);
+    const [gridDivisions, setGridDivisions] = useState(20);
+    const [gridColor, setGridColor] = useState('#CFCFCF');
 
     // Refs
     const sceneRef = useRef(null);
@@ -44,6 +50,67 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
     const controlsTimeoutRef = useRef(null);
+    const xzGridRef = useRef(null);
+    const xyGridRef = useRef(null);
+    const yzGridRef = useRef(null);
+
+
+
+
+    const createGrids = useCallback(() => {
+        if (!sceneRef.current) return;
+
+        // Remove existing grids
+        if (xzGridRef.current) sceneRef.current.remove(xzGridRef.current);
+        if (xyGridRef.current) sceneRef.current.remove(xyGridRef.current);
+        if (yzGridRef.current) sceneRef.current.remove(yzGridRef.current);
+
+        const color = new THREE.Color(gridColor);
+        const gridSize = 10;
+
+        // XZ Grid (floor)
+        const xzGrid = new THREE.GridHelper(gridSize, gridDivisions, color, color);
+        xzGrid.position.y = 0;
+        xzGrid.visible = showXZGrid;
+        sceneRef.current.add(xzGrid);
+        xzGridRef.current = xzGrid;
+
+        // XY Grid (front)
+        const xyGrid = new THREE.GridHelper(gridSize, gridDivisions, color, color);
+        xyGrid.rotation.x = Math.PI / 2; // Rotate to make vertical
+        xyGrid.position.z = 0;
+        xyGrid.visible = showXYGrid;
+        sceneRef.current.add(xyGrid);
+        xyGridRef.current = xyGrid;
+
+        // YZ Grid (side)
+        const yzGrid = new THREE.GridHelper(gridSize, gridDivisions, color, color);
+        yzGrid.rotation.z = Math.PI / 2; // Rotate to make vertical
+        yzGrid.position.x = 0;
+        yzGrid.visible = showYZGrid;
+        sceneRef.current.add(yzGrid);
+        yzGridRef.current = yzGrid;
+    }, [gridDivisions, gridColor, showXZGrid, showXYGrid, showYZGrid]);
+
+    const toggleXZGrid = useCallback(() => {
+        setShowXZGrid(prev => !prev);
+    }, []);
+
+    const toggleXYGrid = useCallback(() => {
+        setShowXYGrid(prev => !prev);
+    }, []);
+
+    const toggleYZGrid = useCallback(() => {
+        setShowYZGrid(prev => !prev);
+    }, []);
+
+    const handleGridDivisionsChange = useCallback((value) => {
+        setGridDivisions(value);
+    }, []);
+
+    const handleGridColorChange = useCallback((color) => {
+        setGridColor(color);
+    }, []);
 
     const showControls = useCallback(() => {
         setControlsVisible(true);
@@ -662,9 +729,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         lightsRef.current = setupLighting(scene);
 
         // Add grid helper
-        const gridHelper = new THREE.GridHelper(10, 10, 0x808080, 0xDDDDDD);
-        gridHelper.position.y = 0;
-        scene.add(gridHelper);
+        createGrids();
 
         // Add axes helper
         const axesHelper = new THREE.AxesHelper(5);
@@ -724,6 +789,18 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
         animate();
     }, [container, modelUrl, binUrl, onLoad, setupLighting, loadSTLModel, loadGLTFModel, setOptimalInitialView, handleZoom]);
+
+
+    useEffect(() => {
+        if (xzGridRef.current) xzGridRef.current.visible = showXZGrid;
+        if (xyGridRef.current) xyGridRef.current.visible = showXYGrid;
+        if (yzGridRef.current) yzGridRef.current.visible = showYZGrid;
+    }, [showXZGrid, showXYGrid, showYZGrid]);
+
+// Effect to recreate grids when divisions or color changes
+    useEffect(() => {
+        createGrids();
+    }, [createGrids, gridDivisions, gridColor]);
 
     // Effect to reset initial position when model URL changes
     useEffect(() => {
@@ -832,6 +909,19 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         onViewChange={handleViewChange}
                     />
 
+                    {/* Add the new grid controls */}
+                    <GridControls
+                        showXZGrid={showXZGrid}
+                        showXYGrid={showXYGrid}
+                        showYZGrid={showYZGrid}
+                        gridDivisions={gridDivisions}
+                        gridColor={gridColor}
+                        onToggleXZGrid={toggleXZGrid}
+                        onToggleXYGrid={toggleXYGrid}
+                        onToggleYZGrid={toggleYZGrid}
+                        onGridDivisionsChange={handleGridDivisionsChange}
+                        onGridColorChange={handleGridColorChange}
+                    />
                 </ViewerControls>
             )}
             <KeyboardShortcuts
