@@ -28,6 +28,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [isOrthographic, setIsOrthographic] = useState(false);
     const [controlsVisible, setControlsVisible] = useState(true);
     const [controlsLocked, setControlsLocked] = useState(false);
+    const [shortcutsVisible, setShortcutsVisible] = useState(false);
 
     // Refs
     const sceneRef = useRef(null);
@@ -69,6 +70,10 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             showControls(); // This will reset the timeout
         }
     }, [controlsLocked, showControls]);
+
+    const toggleShortcuts = useCallback(() => {
+        setShortcutsVisible(prev => !prev);
+    }, []);
 
     // Animate camera helper function - defined before other callbacks that depend on it
     const animateCamera = useCallback((newPosition, targetPosition) => {
@@ -806,6 +811,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     visible={controlsVisible}
                     locked={controlsLocked}
                     onToggleLock={toggleControlsLock}
+                    onToggleShortcuts={toggleShortcuts}
                 >
                     <ColorSelector
                         currentColor={modelColor}
@@ -821,10 +827,12 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         onViewChange={handleViewChange}
                     />
 
-                    <KeyboardShortcuts />
                 </ViewerControls>
             )}
-
+            <KeyboardShortcuts
+                isVisible={shortcutsVisible}
+                onClose={() => setShortcutsVisible(false)}
+            />
             {!controlsVisible && (
                 <div
                     className="controls-indicator visible"
