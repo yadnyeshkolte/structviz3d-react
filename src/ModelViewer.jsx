@@ -40,13 +40,106 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
 
+    // Animate camera helper function - defined before other callbacks that depend on it
+    const animateCamera = useCallback((newPosition, targetPosition) => {
+        // Store starting position and orientation
+        const startPos = currentCameraRef.current.position.clone();
+        const startTarget = controlsRef.current.target.clone();
+
+        // Cancel any ongoing animation
+        if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+        }
+
+        // Animation start time
+        const startTime = Date.now();
+
+        // Animation function
+        const animateCameraMove = () => {
+            const now = Date.now();
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+
+            // Use an ease-out function for smoother slowing at the end
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+            // Interpolate position
+            const newPos = new THREE.Vector3().lerpVectors(
+                startPos,
+                newPosition,
+                easeProgress
+            );
+            currentCameraRef.current.position.copy(newPos);
+
+            // Interpolate target
+            const newTarget = new THREE.Vector3().lerpVectors(
+                startTarget,
+                targetPosition,
+                easeProgress
+            );
+            controlsRef.current.target.copy(newTarget);
+
+            // Update controls
+            controlsRef.current.update();
+
+            // Continue animation if not complete
+            if (progress < 1) {
+                animationRef.current = requestAnimationFrame(animateCameraMove);
+            } else {
+                setAnimating(false);
+            }
+        };
+
+        // Start animation
+        animationRef.current = requestAnimationFrame(animateCameraMove);
+    }, []);
+
+    // Handle zoom function - defined before it's used in initThreeJS
+    const handleZoom = useCallback((event) => {
+        event.preventDefault();
+
+        if (!controlsRef.current || !currentCameraRef.current || !container) return;
+
+        // Get mouse position in normalized device coordinates
+        const rect = container.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
+        const y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+        // Create raycaster and find intersection point with model
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(x, y), currentCameraRef.current);
+
+        // Check for intersections with model
+        const intersects = raycaster.intersectObject(modelRef.current, true);
+
+        if (intersects.length > 0) {
+            // Get zoom delta and direction
+            const zoomDelta = event.deltaY * -0.001;  // Adjust sensitivity here
+
+            // Calculate target position (the intersection point)
+            const targetPos = intersects[0].point;
+
+            // Move camera along the direction toward/away from the intersection point
+            const cameraPos = currentCameraRef.current.position;
+            const direction = new THREE.Vector3().subVectors(targetPos, cameraPos).normalize();
+            const distance = direction.multiplyScalar(zoomDelta * 10);
+
+            currentCameraRef.current.position.add(distance);
+            controlsRef.current.update();
+        } else {
+            // Fallback to default OrbitControls zoom
+            const zoomDelta = event.deltaY * 0.001;
+            controlsRef.current.zoom(Math.pow(0.95, -zoomDelta));
+            controlsRef.current.update();
+        }
+    }, [container]);
 
     const toggleCameraMode = useCallback(() => {
         setIsOrthographic(prev => !prev);
 
         if (!isOrthographic) {
             // Switching to orthographic
-            if (!orthographicCameraRef.current) {
+            if (!orthographicCameraRef.current && container) {
                 // Create orthographic camera if it doesn't exist
                 const aspect = container.clientWidth / container.clientHeight;
                 const frustumSize = 10;
@@ -128,7 +221,9 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             default: [0, distance * 0.5, distance]
         };
 
-        return new THREE.Vector3(...(positions[view] || positions.default));
+        // Fix: Create Vector3 with individual coordinates instead of array
+        const positionArray = positions[view] || positions.default;
+        return new THREE.Vector3(positionArray[0], positionArray[1], positionArray[2]);
     }, []);
 
     // Handle view changes - memoized
@@ -226,60 +321,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
         // Start animation
         animationRef.current = requestAnimationFrame(animateCameraMove);
-    }, [animating, calculateViewPosition]);
-
-    const animateCamera = useCallback((newPosition, targetPosition) => {
-        // Store starting position and orientation
-        const startPos = currentCameraRef.current.position.clone();
-        const startTarget = controlsRef.current.target.clone();
-
-        // Cancel any ongoing animation
-        if (animationRef.current) {
-            cancelAnimationFrame(animationRef.current);
-        }
-
-        // Animation start time
-        const startTime = Date.now();
-
-        // Animation function
-        const animateCameraMove = () => {
-            const now = Date.now();
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
-
-            // Use an ease-out function for smoother slowing at the end
-            const easeProgress = 1 - Math.pow(1 - progress, 3);
-
-            // Interpolate position
-            const newPos = new THREE.Vector3().lerpVectors(
-                startPos,
-                newPosition,
-                easeProgress
-            );
-            currentCameraRef.current.position.copy(newPos);
-
-            // Interpolate target
-            const newTarget = new THREE.Vector3().lerpVectors(
-                startTarget,
-                targetPosition,
-                easeProgress
-            );
-            controlsRef.current.target.copy(newTarget);
-
-            // Update controls
-            controlsRef.current.update();
-
-            // Continue animation if not complete
-            if (progress < 1) {
-                animationRef.current = requestAnimationFrame(animateCameraMove);
-            } else {
-                setAnimating(false);
-            }
-        };
-
-        // Start animation
-        animationRef.current = requestAnimationFrame(animateCameraMove);
-    }, []);
+    }, [animating, calculateViewPosition, animateCamera]);
 
     // Set optimal initial view based on model size
     const setOptimalInitialView = useCallback((model) => {
@@ -354,6 +396,32 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         return lights;
     }, []);
 
+    // Refactored function to handle model setup (reduces code duplication)
+    const setupModel = useCallback((model, scene) => {
+        modelRef.current = model;
+
+        // Create and add group
+        const modelGroup = new THREE.Group();
+        scene.add(modelGroup);
+        modelGroup.add(model);
+        modelGroupRef.current = modelGroup;
+
+        // Center model
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.set(-center.x, -center.y, -center.z);
+
+        // Scale model
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim > 0) {
+            const scale = DEFAULT_SCALE_FACTOR / maxDim;
+            modelGroup.scale.set(scale, scale, scale);
+        }
+
+        return { box, size, center, maxDim };
+    }, []);
+
     // Load STL model
     const loadSTLModel = useCallback((url, scene, onSuccess, onProgress, onError) => {
         const loader = new STLLoader();
@@ -370,26 +438,9 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
                 // Create mesh
                 const model = new THREE.Mesh(geometry, material);
-                modelRef.current = model;
 
-                // Create and add group
-                const modelGroup = new THREE.Group();
-                scene.add(modelGroup);
-                modelGroup.add(model);
-                modelGroupRef.current = modelGroup;
-
-                // Center model
-                const box = new THREE.Box3().setFromObject(model);
-                const center = box.getCenter(new THREE.Vector3());
-                model.position.set(-center.x, -center.y, -center.z);
-
-                // Scale model
-                const size = box.getSize(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                if (maxDim > 0) {
-                    const scale = DEFAULT_SCALE_FACTOR / maxDim;
-                    modelGroup.scale.set(scale, scale, scale);
-                }
+                // Setup the model and get model properties
+                setupModel(model, scene);
 
                 // Enable shadows
                 model.castShadow = true;
@@ -400,7 +451,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             onProgress,
             onError
         );
-    }, [modelColor]);
+    }, [modelColor, setupModel]);
 
     // Load GLTF model
     const loadGLTFModel = useCallback((url, scene, onSuccess, onProgress, onError) => {
@@ -414,26 +465,9 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             url,
             (gltf) => {
                 const model = gltf.scene;
-                modelRef.current = model;
 
-                // Create and add group
-                const modelGroup = new THREE.Group();
-                scene.add(modelGroup);
-                modelGroup.add(model);
-                modelGroupRef.current = modelGroup;
-
-                // Center model
-                const box = new THREE.Box3().setFromObject(model);
-                const center = box.getCenter(new THREE.Vector3());
-                model.position.set(-center.x, -center.y, -center.z);
-
-                // Scale model
-                const size = box.getSize(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                if (maxDim > 0) {
-                    const scale = DEFAULT_SCALE_FACTOR / maxDim;
-                    modelGroup.scale.set(scale, scale, scale);
-                }
+                // Setup the model and get model properties
+                setupModel(model, scene);
 
                 // Apply material settings to all meshes
                 model.traverse((child) => {
@@ -461,7 +495,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             onProgress,
             onError
         );
-    }, [modelColor]);
+    }, [modelColor, setupModel]);
 
     // Clean up resources
     const cleanupResources = useCallback(() => {
@@ -538,46 +572,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         }
     }, [container]);
 
-
-    const handleZoom = useCallback((event) => {
-        event.preventDefault();
-
-        if (!controlsRef.current || !currentCameraRef.current || !container) return;
-
-        // Get mouse position in normalized device coordinates
-        const rect = container.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
-        const y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
-
-        // Create raycaster and find intersection point with model
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(x, y), currentCameraRef.current);
-
-        // Check for intersections with model
-        const intersects = raycaster.intersectObject(modelRef.current, true);
-
-        if (intersects.length > 0) {
-            // Get zoom delta and direction
-            const zoomDelta = event.deltaY * -0.001;  // Adjust sensitivity here
-
-            // Calculate target position (the intersection point)
-            const targetPos = intersects[0].point;
-
-            // Move camera along the direction toward/away from the intersection point
-            const cameraPos = currentCameraRef.current.position;
-            const direction = new THREE.Vector3().subVectors(targetPos, cameraPos).normalize();
-            const distance = direction.multiplyScalar(zoomDelta * 10);
-
-            currentCameraRef.current.position.add(distance);
-            controlsRef.current.update();
-        } else {
-            // Fallback to default OrbitControls zoom
-            const zoomDelta = event.deltaY * 0.001;
-            controlsRef.current.zoom(Math.pow(0.95, -zoomDelta));
-            controlsRef.current.update();
-        }
-    }, [container]);
-
     // Setup scene and initialize three.js
     const initThreeJS = useCallback(() => {
         if (!container || !modelUrl) return;
@@ -602,7 +596,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         cameraRef.current = perspCamera; // For backward compatibility
         currentCameraRef.current = perspCamera; // Active camera reference
 
-
         // Setup renderer
         const renderer = new THREE.WebGLRenderer({
             antialias: true,
@@ -611,7 +604,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.outputEncoding = THREE.sRGBEncoding;
+        // Fix: Update to the correct encoding property
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -640,7 +634,12 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         controls.target.set(0, 0, 0);
         controls.update();
         controlsRef.current = controls;
-        renderer.domElement?.removeEventListener('wheel', handleZoom);
+
+        // Remove any existing wheel event listeners to prevent duplicates
+        if (renderer.domElement) {
+            renderer.domElement.removeEventListener('wheel', handleZoom);
+        }
+
         // Setup lighting
         lightsRef.current = setupLighting(scene);
 
@@ -665,7 +664,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     if (typeof onLoad === 'function') onLoad();
                 },
                 (xhr) => {
-                    const progress = (xhr.loaded / xhr.total) * 100;
+                    // Fix: Check if xhr.total exists before using it
+                    const progress = xhr.total ? (xhr.loaded / xhr.total) * 100 : 0;
                     console.log(`${progress.toFixed(2)}% loaded`);
                 },
                 (error) => {
@@ -684,7 +684,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     if (typeof onLoad === 'function') onLoad();
                 },
                 (xhr) => {
-                    const progress = (xhr.loaded / xhr.total) * 100;
+                    // Fix: Check if xhr.total exists before using it
+                    const progress = xhr.total ? (xhr.loaded / xhr.total) * 100 : 0;
                     console.log(`${progress.toFixed(2)}% loaded`);
                 },
                 (error) => {
@@ -704,7 +705,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         };
 
         animate();
-    }, [container, modelUrl, binUrl, onLoad, setupLighting, loadSTLModel, loadGLTFModel, setOptimalInitialView]);
+    }, [container, modelUrl, binUrl, onLoad, setupLighting, loadSTLModel, loadGLTFModel, setOptimalInitialView, handleZoom]);
 
     // Effect to reset initial position when model URL changes
     useEffect(() => {
@@ -737,7 +738,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             cleanupResources();
         };
     }, [container, modelUrl, binUrl, handleResize, cleanupResources, initThreeJS]);
-
 
     // Add event listener for keyboard shortcuts
     useEffect(() => {
