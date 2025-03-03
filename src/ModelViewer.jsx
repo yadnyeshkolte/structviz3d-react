@@ -10,6 +10,8 @@ import CameraControls from './CameraControls';
 import KeyboardShortcuts from './KeyboardShortcuts';
 import cameraStateManager from './CameraStateManager.js';
 import GridControls from './GridControls';
+import lightingManager from './lighting/LightingManager.jsx';
+import LightingControls from './lighting/LightingControls.jsx';
 
 // Constants
 const DEFAULT_COLOR = '#999999';
@@ -408,53 +410,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
     // Setup lighting - extracted as a separate function
     const setupLighting = useCallback((scene) => {
-        const lights = [];
-
-        // Ambient light for overall illumination
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-        scene.add(ambientLight);
-        lights.push(ambientLight);
-
-        // Main directional light with shadows
-        const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        mainLight.position.set(5, 10, 7.5);
-        mainLight.castShadow = true;
-
-        // Shadow settings
-        mainLight.shadow.mapSize.width = 2048;
-        mainLight.shadow.mapSize.height = 2048;
-        mainLight.shadow.camera.near = 0.5;
-        mainLight.shadow.camera.far = 50;
-        mainLight.shadow.camera.left = -10;
-        mainLight.shadow.camera.right = 10;
-        mainLight.shadow.camera.top = 10;
-        mainLight.shadow.camera.bottom = -10;
-
-        scene.add(mainLight);
-        lights.push(mainLight);
-
-        // Hemisphere light
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x223344, 0.5);
-        scene.add(hemiLight);
-        lights.push(hemiLight);
-
-        // Fill lights
-        const fillLight1 = new THREE.DirectionalLight(0xffffff, 0.3);
-        fillLight1.position.set(-5, 2, -5);
-        scene.add(fillLight1);
-        lights.push(fillLight1);
-
-        const fillLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
-        fillLight2.position.set(5, 0, -5);
-        scene.add(fillLight2);
-        lights.push(fillLight2);
-
-        const backLight = new THREE.DirectionalLight(0xffffff, 0.2);
-        backLight.position.set(0, 5, -10);
-        scene.add(backLight);
-        lights.push(backLight);
-
-        return lights;
+        return lightingManager.setupLighting(scene);
     }, []);
 
     // Refactored function to handle model setup (reduces code duplication)
@@ -567,7 +523,9 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     if (child.geometry) {
                         child.geometry.dispose();
                     }
-
+                    if (sceneRef.current) {
+                        lightingManager.clearLights(sceneRef.current);
+                    }
                     if (Array.isArray(child.material)) {
                         child.material.forEach(material => {
                             if (material.map) material.map.dispose();
@@ -855,6 +813,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
             {/* Controls Overlay */}
             {!loading && !error && modelUrl && (
+
                 <ViewerControls
                     isFullscreen={isFullscreen}
                     toggleFullscreen={toggleFullscreen}
@@ -904,7 +863,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                 isVisible={shortcutsVisible}
                 onClose={() => setShortcutsVisible(false)}
             />
-
+            <LightingControls scene={sceneRef.current} />
             {/* Show controls button when controls are hidden */}
             {!controlsVisible && (
                 <div
