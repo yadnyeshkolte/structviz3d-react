@@ -13,6 +13,7 @@ import GridControls from './GridControls';
 import lightingManager from './lighting/LightingManager.jsx';
 import LightingControls from './lighting/LightingControls.jsx';
 import ViewerControlsUtils from './ViewerControlsUtils';
+import OrientationControls from './OrientationControls';
 
 // Constants
 const DEFAULT_COLOR = '#999999';
@@ -53,6 +54,18 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
 
+    const resetModelOrientation = useCallback(() => {
+        if (modelGroupRef.current) {
+            // Reset the rotation
+            modelGroupRef.current.rotation.set(0, 0, 0);
+
+            // After resetting orientation, we may want to update the controls target
+            // to ensure the camera is still focused correctly
+            if (controlsRef.current) {
+                controlsRef.current.update();
+            }
+        }
+    }, []);
 
     const handleZoomIn = useCallback(() => {
         ViewerControlsUtils.handleZoomIn(
@@ -643,6 +656,12 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         onXZGridColorChange={handleXZGridColorChange}
                         onXYGridColorChange={handleXYGridColorChange}
                         onYZGridColorChange={handleYZGridColorChange}
+                    />
+
+                    {/* Add the new Orientation Controls */}
+                    <OrientationControls
+                        modelGroup={modelGroupRef.current}
+                        resetOrientation={resetModelOrientation}
                     />
                 </ViewerControls>
             )}
