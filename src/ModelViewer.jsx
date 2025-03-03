@@ -14,6 +14,8 @@ import lightingManager from './lighting/LightingManager.jsx';
 import LightingControls from './lighting/LightingControls.jsx';
 import ViewerControlsUtils from './ViewerControlsUtils';
 import OrientationControls from './OrientationControls';
+import WireframeControls from './WireframeControls';
+import EnhancedWireframeMode from './EnhancedWireframeMode';
 
 // Constants
 const DEFAULT_COLOR = '#999999';
@@ -39,6 +41,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [xzGridColor, setXZGridColor] = useState('#CFCFCF');
     const [xyGridColor, setXYGridColor] = useState('#8BC34A');
     const [yzGridColor, setYZGridColor] = useState('#2196F3');
+    const [isWireframe, setIsWireframe] = useState(false);
 
     // Refs
     const sceneRef = useRef(null);
@@ -53,6 +56,35 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const perspectiveCameraRef = useRef(null);
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
+
+    const toggleWireframe = useCallback(() => {
+        const newWireframeState = !isWireframe;
+        setIsWireframe(newWireframeState);
+
+        if (modelRef.current) {
+            modelRef.current.traverse((child) => {
+                if (child.isMesh) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(material => {
+                            material.wireframe = newWireframeState;
+                            if (newWireframeState) {
+                                material.wireframeLinewidth = 2;
+                                material.wireframeLinecap = 'round';
+                                material.wireframeLinejoin = 'round';
+                            }
+                        });
+                    } else if (child.material) {
+                        child.material.wireframe = newWireframeState;
+                        if (newWireframeState) {
+                            child.material.wireframeLinewidth = 2;
+                            child.material.wireframeLinecap = 'round';
+                            child.material.wireframeLinejoin = 'round';
+                        }
+                    }
+                }
+            });
+        }
+    }, [isWireframe]);
 
     const resetModelOrientation = useCallback(() => {
         if (modelGroupRef.current) {
@@ -90,14 +122,28 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         ViewerControlsUtils.toggleFullscreen(container, setIsFullscreen);
     }, [container]);
 
-    // Update model color - memoized callback
     const updateModelColor = useCallback((color) => {
         // Update the state
         setModelColor(color);
 
         // Use the utility function to update the model material
         ViewerControlsUtils.updateModelColor(color, modelRef);
-    }, []);
+
+        // Re-apply wireframe if it's enabled
+        if (isWireframe && modelRef.current) {
+            modelRef.current.traverse((child) => {
+                if (child.isMesh) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(material => {
+                            material.wireframe = true;
+                        });
+                    } else if (child.material) {
+                        child.material.wireframe = true;
+                    }
+                }
+            });
+        }
+    }, [isWireframe]);
 
     const toggleXZGrid = useCallback(() => {
         setShowXZGrid(prev => !prev);
@@ -264,7 +310,12 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     // Load STL model
     const loadSTLModel = useCallback((url, scene, onSuccess, onProgress, onError) => {
         const loader = new STLLoader();
-
+        if (isWireframe) {
+            material.wireframe = true;
+            material.wireframeLinewidth = 2;
+            material.wireframeLinecap = 'round';
+            material.wireframeLinejoin = 'round';
+        }
         loader.load(
             url,
             (geometry) => {
@@ -295,7 +346,21 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     // Load GLTF model
     const loadGLTFModel = useCallback((url, scene, onSuccess, onProgress, onError) => {
         const loader = new GLTFLoader();
-
+        if (isWireframe) {
+            if (Array.isArray(child.material)) {
+                child.material.forEach(mat => {
+                    mat.wireframe = true;
+                    mat.wireframeLinewidth = 2;
+                    mat.wireframeLinecap = 'round';
+                    mat.wireframeLinejoin = 'round';
+                });
+            } else if (child.material) {
+                child.material.wireframe = true;
+                child.material.wireframeLinewidth = 2;
+                child.material.wireframeLinecap = 'round';
+                child.material.wireframeLinejoin = 'round';
+            }
+        }
         // Set resource path for associated files
         const resourcePath = url.substring(0, url.lastIndexOf('/') + 1);
         loader.setResourcePath(resourcePath);
@@ -363,6 +428,9 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         // Clean up view manager
         viewManager.cleanup();
 
+        if (sceneRef.current) {
+            EnhancedWireframeMode.applyPencilView(sceneRef.current, rendererRef.current, currentCameraRef.current, false);
+        }
         // Dispose of renderer
         if (rendererRef.current) {
             rendererRef.current.dispose();
@@ -662,6 +730,14 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     <OrientationControls
                         modelGroup={modelGroupRef.current}
                         resetOrientation={resetModelOrientation}
+                    />
+                    <WireframeControls
+                        modelRef={modelRef}
+                        isWireframe={isWireframe}
+                        toggleWireframe={toggleWireframe}
+                        scene={sceneRef.current}
+                        renderer={rendererRef.current}
+                        currentCamera={currentCameraRef.current}
                     />
                 </ViewerControls>
             )}

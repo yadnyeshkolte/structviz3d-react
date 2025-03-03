@@ -16,6 +16,9 @@ export default [
         sourceType: 'module',
       },
     },
+    env: {
+      jest: true
+    },
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
