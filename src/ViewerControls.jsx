@@ -6,7 +6,9 @@ const ViewerControls = ({
                             toggleFullscreen,
                             visible = true,
                             onToggleLock,
-                            onToggleShortcuts
+                            onToggleShortcuts,
+                            onZoomIn,
+                            onZoomOut
                         }) => {
     return (
         <div className={`viewer-controls ${visible ? 'visible' : 'hidden'}`} style={{
@@ -29,32 +31,92 @@ const ViewerControls = ({
             maxHeight: '80vh',
             overflowY: 'auto'
         }}>
-            {/* Lock/unlock button */}
-            <button
-                onClick={() => onToggleLock()} // This will now just hide the panel
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '8px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    color: 'red',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s ease',
-                    width: '40px',
-                    height: '40px',
-                    alignSelf: 'flex-end',
-                }}
-                title="Hide controls"
-            >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                     strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 6L6 18"/>
-                    <path d="M6 6l12 12"/>
-                </svg>
-            </button>
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                alignSelf: 'flex-end'
+            }}>
+                <button
+                    onClick={onZoomIn}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
+                        width: '40px',
+                        height: '40px'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                    title="Zoom In"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                         strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                </button>
+
+                <button
+                    onClick={onZoomOut}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
+                        width: '40px',
+                        height: '40px'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                    title="Zoom Out"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                         strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                </button>
+                <button
+                    onClick={() => onToggleLock()} // This will now just hide the panel
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        color: 'red',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
+                        width: '40px',
+                        height: '40px',
+                        alignSelf: 'flex-end',
+                    }}
+                    title="Hide controls"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                         strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6L6 18"/>
+                        <path d="M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
             <div style={{
                 display: 'flex',
                 gap: '8px',

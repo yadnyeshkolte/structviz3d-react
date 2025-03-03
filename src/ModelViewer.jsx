@@ -56,6 +56,51 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const yzGridRef = useRef(null);
 
 
+    const handleZoomIn = useCallback(() => {
+        if (!controlsRef.current || !currentCameraRef.current) return;
+
+        if (isOrthographic) {
+            // For orthographic camera, adjust the zoom property
+            if (orthographicCameraRef.current) {
+                // Decrease the zoom factor (which increases the view size)
+                orthographicCameraRef.current.zoom *= 1.2;
+                orthographicCameraRef.current.updateProjectionMatrix();
+            }
+        } else {
+            // For perspective camera, move closer to target
+            const direction = new THREE.Vector3();
+            direction.subVectors(controlsRef.current.target, currentCameraRef.current.position).normalize();
+
+            // Move camera closer to target (zoom in)
+            const distance = direction.multiplyScalar(1); // Adjust this value for zoom speed
+            currentCameraRef.current.position.add(distance);
+        }
+
+        controlsRef.current.update();
+    }, [isOrthographic]);
+
+    const handleZoomOut = useCallback(() => {
+        if (!controlsRef.current || !currentCameraRef.current) return;
+
+        if (isOrthographic) {
+            // For orthographic camera, adjust the zoom property
+            if (orthographicCameraRef.current) {
+                // Increase the zoom factor (which decreases the view size)
+                orthographicCameraRef.current.zoom *= 0.8;
+                orthographicCameraRef.current.updateProjectionMatrix();
+            }
+        } else {
+            // For perspective camera, move away from target
+            const direction = new THREE.Vector3();
+            direction.subVectors(controlsRef.current.target, currentCameraRef.current.position).normalize();
+
+            // Move camera away from target (zoom out)
+            const distance = direction.multiplyScalar(-1); // Negative value for zooming out
+            currentCameraRef.current.position.add(distance);
+        }
+
+        controlsRef.current.update();
+    }, [isOrthographic]);
 
     const createGrids = useCallback(() => {
         if (!sceneRef.current) return;
@@ -867,6 +912,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     locked={controlsLocked}
                     onToggleLock={toggleControlsLock}
                     onToggleShortcuts={toggleShortcuts}
+                    onZoomIn={handleZoomIn}
+                    onZoomOut={handleZoomOut}
                 >
                     <ColorSelector
                         currentColor={modelColor}
