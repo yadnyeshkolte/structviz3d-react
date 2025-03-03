@@ -112,7 +112,7 @@ const OrientationControls = ({ modelGroup, resetOrientation }) => {
                 {/* X-Axis Controls */}
                 <div style={{ marginBottom: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
-                        <label style={{ color: 'white', fontSize: '12px', width: '30px' }}>X-Axis:</label>
+                        <label style={{ color: 'white', fontSize: '12px', width: '50px' }}>X-Axis:</label>
                         <input
                             type="text"
                             min="-180"
@@ -161,7 +161,7 @@ const OrientationControls = ({ modelGroup, resetOrientation }) => {
                 {/* Y-Axis Controls */}
                 <div style={{ marginBottom: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
-                        <label style={{ color: 'white', fontSize: '12px', width: '30px' }}>Y-Axis:</label>
+                        <label style={{ color: 'white', fontSize: '12px', width: '50px' }}>Y-Axis:</label>
                         <input
                             type="text"
                             min="-180"
@@ -210,7 +210,7 @@ const OrientationControls = ({ modelGroup, resetOrientation }) => {
                 {/* Z-Axis Controls */}
                 <div style={{ marginBottom: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
-                        <label style={{ color: 'white', fontSize: '12px', width: '30px' }}>Z-Axis:</label>
+                        <label style={{ color: 'white', fontSize: '12px', width: '50px' }}>Z-Axis:</label>
                         <input
                             type="text"
                             min="-180"
