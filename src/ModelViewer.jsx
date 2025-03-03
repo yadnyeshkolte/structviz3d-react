@@ -51,7 +51,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const perspectiveCameraRef = useRef(null);
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
-    const controlsTimeoutRef = useRef(null);
     const xzGridRef = useRef(null);
     const xyGridRef = useRef(null);
     const yzGridRef = useRef(null);
@@ -120,31 +119,10 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         setYZGridColor(color);
     }, []);
 
-    const showControls = useCallback(() => {
-        setControlsVisible(true);
-
-        // Clear any existing timeout
-        if (controlsTimeoutRef.current) {
-            clearTimeout(controlsTimeoutRef.current);
-        }
-
-        // Set a new timeout if controls aren't locked
-        if (!controlsLocked) {
-            controlsTimeoutRef.current = setTimeout(() => {
-                setControlsVisible(false);
-            }, 3000); // 3 seconds seconds of inactivity
-        }
-    }, [controlsLocked]);
-
     const toggleControlsLock = useCallback(() => {
-        const newLockedState = !controlsLocked;
-        setControlsLocked(newLockedState);
-
-        // If unlocking, set timeout to hide
-        if (!newLockedState) {
-            showControls(); // This will reset the timeout
-        }
-    }, [controlsLocked, showControls]);
+        setControlsVisible(false);
+        setControlsLocked(true);
+    }, []);
 
     const toggleShortcuts = useCallback(() => {
         setShortcutsVisible(prev => !prev);
@@ -822,16 +800,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         return cleanupResources;
     }, [modelUrl, cleanupResources]);
 
-    useEffect(() => {
-        const handleMouseMove = () => {
-            showControls();
-        };
-        container?.addEventListener('mousemove', handleMouseMove);
-        return () => {
-            container?.removeEventListener('mousemove', handleMouseMove);
-        };
-    }, [showControls]);
-
     // Effect to initialize Three.js
     useEffect(() => {
         initThreeJS();
@@ -849,9 +817,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             document.removeEventListener('fullscreenchange', fullscreenChangeHandler);
             cleanupResources();
 
-            if (controlsTimeoutRef.current) {
-                clearTimeout(controlsTimeoutRef.current);
-            }
         };
     }, [container, modelUrl, binUrl, handleResize, cleanupResources, initThreeJS]);
 
@@ -940,14 +905,38 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                 isVisible={shortcutsVisible}
                 onClose={() => setShortcutsVisible(false)}
             />
+
+            {/* Show controls button when controls are hidden */}
             {!controlsVisible && (
                 <div
-                    className="controls-indicator visible"
-                    onClick={() => {
-                        setControlsVisible(true);
-                        setControlsLocked(true);
+                    className="controls-indicator"
+                    onClick={() => setControlsVisible(true)}
+                    style={{
+                        position: 'absolute',
+                        top: '15px',
+                        right: '15px',
+                        width: '40px',
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'rgba(33, 33, 33, 0.75)',
+                        color: 'yellow',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        zIndex: 10,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                        backdropFilter: 'blur(4px)'
                     }}
-                />
+                    title="Show controls"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                         strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </div>
             )}
 
             {loading && (
