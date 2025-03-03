@@ -37,6 +37,73 @@ const ViewerControls = ({
                 alignSelf: 'flex-end'
             }}>
                 <button
+                    onClick={onToggleShortcuts} // Add this prop to ViewerControls
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
+                        width: '40px',
+                        height: '40px',
+                        alignSelf: 'flex-end',
+                        marginTop: '8px' // Add some spacing between buttons
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                    title="Keyboard Shortcuts"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                         strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                        <path d="M6 8h.01"></path>
+                        <path d="M10 8h.01"></path>
+                        <path d="M14 8h.01"></path>
+                        <path d="M18 8h.01"></path>
+                        <path d="M8 12h.01"></path>
+                        <path d="M12 12h.01"></path>
+                        <path d="M16 12h.01"></path>
+                        <path d="M7 16h10"></path>
+                    </svg>
+                </button>
+                <button
+                    onClick={() => onToggleLock()} // This will now just hide the panel
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        color: 'red',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
+                        width: '40px',
+                        height: '40px',
+                        alignSelf: 'flex-end',
+                    }}
+                    title="Hide controls"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                         strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6L6 18"/>
+                        <path d="M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                alignSelf: 'flex-end'
+            }}>
+                <button
                     onClick={onZoomIn}
                     style={{
                         display: 'flex',
@@ -90,38 +157,6 @@ const ViewerControls = ({
                         <line x1="8" y1="12" x2="16" y2="12"></line>
                     </svg>
                 </button>
-                <button
-                    onClick={() => onToggleLock()} // This will now just hide the panel
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '8px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        color: 'red',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s ease',
-                        width: '40px',
-                        height: '40px',
-                        alignSelf: 'flex-end',
-                    }}
-                    title="Hide controls"
-                >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                         strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 6L6 18"/>
-                        <path d="M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-
-            <div style={{
-                display: 'flex',
-                gap: '8px',
-                alignSelf: 'flex-end'
-            }}>
                 {/* Fullscreen button */}
                 <button
                     onClick={toggleFullscreen}
@@ -159,42 +194,6 @@ const ViewerControls = ({
                                 d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
                         </svg>
                     )}
-                </button>
-
-                <button
-                    onClick={onToggleShortcuts} // Add this prop to ViewerControls
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '8px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s ease',
-                        width: '40px',
-                        height: '40px',
-                        alignSelf: 'flex-end',
-                        marginTop: '8px' // Add some spacing between buttons
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-                    title="Keyboard Shortcuts"
-                >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                         strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
-                        <path d="M6 8h.01"></path>
-                        <path d="M10 8h.01"></path>
-                        <path d="M14 8h.01"></path>
-                        <path d="M18 8h.01"></path>
-                        <path d="M8 12h.01"></path>
-                        <path d="M12 12h.01"></path>
-                        <path d="M16 12h.01"></path>
-                        <path d="M7 16h10"></path>
-                    </svg>
                 </button>
             </div>
             {/* Divider line */}

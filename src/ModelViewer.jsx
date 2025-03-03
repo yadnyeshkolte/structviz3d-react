@@ -12,12 +12,11 @@ import cameraStateManager from './CameraStateManager.js';
 import GridControls from './GridControls';
 import lightingManager from './lighting/LightingManager.jsx';
 import LightingControls from './lighting/LightingControls.jsx';
+import ViewerControlsUtils from './ViewerControlsUtils';
 
 // Constants
 const DEFAULT_COLOR = '#999999';
-const ANIMATION_DURATION = 1000;
 const DEFAULT_SCALE_FACTOR = 3;
-const VIEW_DISTANCE_FACTOR = 1.5;
 const BG_COLOR = 0xf5f5f5;
 
 const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
@@ -56,50 +55,36 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
 
     const handleZoomIn = useCallback(() => {
-        if (!controlsRef.current || !currentCameraRef.current) return;
-
-        if (isOrthographic) {
-            // For orthographic camera, adjust the zoom property
-            if (orthographicCameraRef.current) {
-                // Decrease the zoom factor (which increases the view size)
-                orthographicCameraRef.current.zoom *= 1.2;
-                orthographicCameraRef.current.updateProjectionMatrix();
-            }
-        } else {
-            // For perspective camera, move closer to target
-            const direction = new THREE.Vector3();
-            direction.subVectors(controlsRef.current.target, currentCameraRef.current.position).normalize();
-
-            // Move camera closer to target (zoom in)
-            const distance = direction.multiplyScalar(1); // Adjust this value for zoom speed
-            currentCameraRef.current.position.add(distance);
-        }
-
-        controlsRef.current.update();
+        ViewerControlsUtils.handleZoomIn(
+            isOrthographic,
+            orthographicCameraRef,
+            currentCameraRef,
+            controlsRef
+        );
     }, [isOrthographic]);
 
     const handleZoomOut = useCallback(() => {
-        if (!controlsRef.current || !currentCameraRef.current) return;
-
-        if (isOrthographic) {
-            // For orthographic camera, adjust the zoom property
-            if (orthographicCameraRef.current) {
-                // Increase the zoom factor (which decreases the view size)
-                orthographicCameraRef.current.zoom *= 0.8;
-                orthographicCameraRef.current.updateProjectionMatrix();
-            }
-        } else {
-            // For perspective camera, move away from target
-            const direction = new THREE.Vector3();
-            direction.subVectors(controlsRef.current.target, currentCameraRef.current.position).normalize();
-
-            // Move camera away from target (zoom out)
-            const distance = direction.multiplyScalar(-1); // Negative value for zooming out
-            currentCameraRef.current.position.add(distance);
-        }
-
-        controlsRef.current.update();
+        ViewerControlsUtils.handleZoomOut(
+            isOrthographic,
+            orthographicCameraRef,
+            currentCameraRef,
+            controlsRef
+        );
     }, [isOrthographic]);
+
+    // Toggle fullscreen - memoized to prevent recreating on every render
+    const toggleFullscreen = useCallback(() => {
+        ViewerControlsUtils.toggleFullscreen(container, setIsFullscreen);
+    }, [container]);
+
+    // Update model color - memoized callback
+    const updateModelColor = useCallback((color) => {
+        // Update the state
+        setModelColor(color);
+
+        // Use the utility function to update the model material
+        ViewerControlsUtils.updateModelColor(color, modelRef);
+    }, []);
 
     const toggleXZGrid = useCallback(() => {
         setShowXZGrid(prev => !prev);
@@ -219,44 +204,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         // Update current camera reference
         currentCameraRef.current = cameraStateManager.getCurrentCamera();
     }, [container, getModelSize]);
-
-    // Toggle fullscreen - memoized to prevent recreating on every render
-    const toggleFullscreen = useCallback(() => {
-        if (!container) return;
-
-        if (!document.fullscreenElement) {
-            container.requestFullscreen()
-                .then(() => setIsFullscreen(true))
-                .catch(err => console.error(`Error enabling fullscreen: ${err.message}`));
-        } else {
-            document.exitFullscreen()
-                .then(() => setIsFullscreen(false))
-                .catch(err => console.error(`Error exiting fullscreen: ${err.message}`));
-        }
-    }, [container]);
-
-    // Update model color - memoized callback
-    const updateModelColor = useCallback((color) => {
-        // Update the state
-        setModelColor(color);
-
-        // Update the model material without affecting camera
-        if (!modelRef.current) return;
-
-        modelRef.current.traverse((child) => {
-            if (!child.isMesh) return;
-
-            if (Array.isArray(child.material)) {
-                child.material.forEach(mat => {
-                    mat.color = new THREE.Color(color);
-                    mat.needsUpdate = true;
-                });
-            } else if (child.material) {
-                child.material.color = new THREE.Color(color);
-                child.material.needsUpdate = true;
-            }
-        });
-    }, []);
 
     // Set optimal initial view based on model size
     const setOptimalInitialView = useCallback((model) => {
@@ -681,7 +628,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
                     {/* Add the new grid controls */}
                     <GridControls
-                        showXZGrid={showXZGrid}
                         scene={sceneRef.current}
                         showXZGrid={showXZGrid}
                         showXYGrid={showXYGrid}
