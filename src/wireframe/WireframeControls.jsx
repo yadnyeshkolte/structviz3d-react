@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import EnhancedWireframeMode from './EnhancedWireframeMode';
+import EnhancedWireframeMode from './EnhancedWireframeMode.js';
 
 const WireframeControls = ({
                                modelRef,

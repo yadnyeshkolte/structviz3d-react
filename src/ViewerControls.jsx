@@ -8,7 +8,9 @@ const ViewerControls = ({
                             onToggleLock,
                             onToggleShortcuts,
                             onZoomIn,
-                            onZoomOut
+                            onZoomOut,
+                            dragModeEnabled,
+                            toggleDragMode
                         }) => {
     return (
         <div className={`viewer-controls ${visible ? 'visible' : 'hidden'}`} style={{
@@ -103,6 +105,34 @@ const ViewerControls = ({
                 gap: '8px',
                 alignSelf: 'flex-end'
             }}>
+                <button
+                    onClick={toggleDragMode}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8px',
+                        backgroundColor: dragModeEnabled ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
+                        width: '40px',
+                        height: '40px'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = dragModeEnabled ? 'rgba(255, 215, 0, 0.4)' : 'rgba(255, 255, 255, 0.2)'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = dragModeEnabled ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)'}
+                    title={dragModeEnabled ? "Disable Drag Mode" : "Enable Drag Mode"}
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                         strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 9l4-4 4 4"/>
+                        <path d="M5 15l4 4 4-4"/>
+                        <path d="M19 9l-4-4-4 4"/>
+                        <path d="M19 15l-4 4-4-4"/>
+                    </svg>
+                </button>
                 <button
                     onClick={onZoomIn}
                     style={{

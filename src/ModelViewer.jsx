@@ -14,8 +14,8 @@ import lightingManager from './lighting/LightingManager.jsx';
 import LightingControls from './lighting/LightingControls.jsx';
 import ViewerControlsUtils from './ViewerControlsUtils';
 import OrientationControls from './OrientationControls';
-import WireframeControls from './WireframeControls';
-import EnhancedWireframeMode from './EnhancedWireframeMode';
+import WireframeControls from './wireframe/WireframeControls.jsx';
+import EnhancedWireframeMode from './wireframe/EnhancedWireframeMode.js';
 
 // Constants
 const DEFAULT_COLOR = '#999999';
@@ -42,6 +42,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [xyGridColor, setXYGridColor] = useState('#8BC34A');
     const [yzGridColor, setYZGridColor] = useState('#2196F3');
     const [isWireframe, setIsWireframe] = useState(false);
+    const [dragModeEnabled, setDragModeEnabled] = useState(false);
 
     // Refs
     const sceneRef = useRef(null);
@@ -56,6 +57,22 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const perspectiveCameraRef = useRef(null);
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
+
+
+    const toggleDragMode = useCallback(() => {
+        const newDragMode = !dragModeEnabled;
+        setDragModeEnabled(newDragMode);
+
+        if (controlsRef.current) {
+            if (newDragMode) {
+                // Switch to drag/pan mode
+                controlsRef.current.mouseButtons.LEFT = THREE.MOUSE.PAN;
+            } else {
+                // Switch back to rotation mode
+                controlsRef.current.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+            }
+        }
+    }, [dragModeEnabled]);
 
     const toggleWireframe = useCallback(() => {
         const newWireframeState = !isWireframe;
@@ -687,6 +704,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     onToggleShortcuts={toggleShortcuts}
                     onZoomIn={handleZoomIn}
                     onZoomOut={handleZoomOut}
+                    dragModeEnabled={dragModeEnabled}
+                    toggleDragMode={toggleDragMode}
                 >
                     <ColorSelector
                         currentColor={modelColor}
