@@ -75,13 +75,12 @@ const WireframeControls = ({
                     color: 'white',
                     fontWeight: 500
                 }}>
-                    Drawing Mode
+                    Drawing View
                 </h3>
             </div>
 
             <div style={{
                 display: 'flex',
-                flexDirection: 'column',
                 gap: '8px'
             }}>
                 <button
@@ -89,7 +88,7 @@ const WireframeControls = ({
                     style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
+                        justifyContent: 'center',
                         padding: '8px 12px',
                         backgroundColor: isWireframe ? 'rgba(66, 135, 245, 0.7)' : 'rgba(255, 255, 255, 0.1)',
                         color: 'white',
@@ -97,53 +96,64 @@ const WireframeControls = ({
                         borderRadius: '6px',
                         cursor: 'pointer',
                         transition: 'background-color 0.2s ease',
-                        fontSize: '14px'
+                        fontSize: '14px',
                     }}
-                    title="Toggle drawing mode"
+                    title={isWireframe ? "Disable drawing view" : "Enable drawing view"}
                 >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        {isWireframe ? (
+                            // Toggle Off icon (X)
+                            <>
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </>
+                        ) : (
+                            // Toggle On icon (Check)
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        )}
                     </svg>
-                    {isWireframe ? "Disable Drawing Mode" : "Enable Drawing Mode"}
                 </button>
 
-                {isWireframe && (
-                    <div style={{
-                        display: 'flex',
-                        gap: '8px',
-                        marginTop: '4px'
-                    }}>
-                        <button
-                            onClick={() => handleModeChange('simple')}
-                            style={{
-                                padding: '6px 10px',
-                                backgroundColor: mode === 'simple' ? 'rgba(66, 135, 245, 0.7)' : 'rgba(255, 255, 255, 0.1)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontSize: '12px'
-                            }}
-                        >
-                            Simple Wireframe
-                        </button>
-                        <button
-                            onClick={() => handleModeChange('pencil')}
-                            style={{
-                                padding: '6px 10px',
-                                backgroundColor: mode === 'pencil' ? 'rgba(66, 135, 245, 0.7)' : 'rgba(255, 255, 255, 0.1)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontSize: '12px'
-                            }}
-                        >
-                            Pencil Drawing
-                        </button>
-                    </div>
-                )}
+                <button
+                    onClick={() => handleModeChange('simple')}
+                    style={{
+                        padding: '8px 12px',
+                        backgroundColor: isWireframe && mode === 'simple' ? 'rgba(66, 135, 245, 0.7)' : 'rgba(255, 255, 255, 0.1)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        opacity: isWireframe ? 1 : 0.5
+                    }}
+                >
+                    Wireframe
+                </button>
+
+                <button
+                    onClick={() => handleModeChange('pencil')}
+                    style={{
+                        padding: '8px 12px',
+                        backgroundColor: isWireframe && mode === 'pencil' ? 'rgba(66, 135, 245, 0.7)' : 'rgba(255, 255, 255, 0.1)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        opacity: isWireframe ? 1 : 0.5
+                    }}
+                >
+                    Pencil
+                </button>
             </div>
         </div>
     );
