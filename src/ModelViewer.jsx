@@ -5,7 +5,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import ColorSelector from './ColorSelector';
 import ViewerControls from './ViewerControls';
-import ViewControls from './ViewControls';
+import ViewControls, { viewManager } from './ViewControls';
 import CameraControls from './CameraControls';
 import KeyboardShortcuts from './KeyboardShortcuts';
 import cameraStateManager from './CameraStateManager.js';
@@ -139,60 +139,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         setShortcutsVisible(prev => !prev);
     }, []);
 
-    // Animate camera helper function - defined before other callbacks that depend on it
-    const animateCamera = useCallback((newPosition, targetPosition) => {
-        // Store starting position and orientation
-        const currentCamera = currentCameraRef.current;
-        if (!currentCamera || !controlsRef.current) return;
-        const startPos = currentCamera.position.clone();
-        const startTarget = controlsRef.current.target.clone();
-
-        // Cancel any ongoing animation
-        if (animationRef.current) {
-            cancelAnimationFrame(animationRef.current);
-        }
-        const startTime = Date.now();
-
-        // Animation function
-        const animateCameraMove = () => {
-            const now = Date.now();
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
-
-            const easeProgress = 1 - Math.pow(1 - progress, 3);
-
-            // Interpolate position
-            const newPos = new THREE.Vector3().lerpVectors(
-                startPos,
-                newPosition,
-                easeProgress
-            );
-            currentCamera.position.copy(newPos);
-
-            // Interpolate target
-            const newTarget = new THREE.Vector3().lerpVectors(
-                startTarget,
-                targetPosition,
-                easeProgress
-            );
-            controlsRef.current.target.copy(newTarget);
-
-            // Update controls
-            controlsRef.current.update();
-
-            // Continue animation if not complete
-            if (progress < 1) {
-                animationRef.current = requestAnimationFrame(animateCameraMove);
-            } else {
-                setAnimating(false);
-            }
-        };
-
-        // Start animation
-        setAnimating(true);
-        animationRef.current = requestAnimationFrame(animateCameraMove);
-    }, []);
-
     // Handle zoom function - defined before it's used in initThreeJS
     const handleZoom = useCallback((event) => {
         event.preventDefault();
@@ -312,101 +258,17 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         });
     }, []);
 
-    // Memoized calculation for view positions based on model size
-    const calculateViewPosition = useCallback((view, modelSize) => {
-        const distance = modelSize * VIEW_DISTANCE_FACTOR;
-        const positions = {
-            front: [0, 0, distance],
-            back: [0, 0, -distance],
-            left: [-distance, 0, 0],
-            right: [distance, 0, 0],
-            top: [0, distance, 0],
-            bottom: [0, -distance, 0],
-            isometric: [distance * 0.7, distance * 0.7, distance * 0.7],
-            default: [0, distance * 0.5, distance]
-        };
-
-        // Fix: Create Vector3 with individual coordinates instead of array
-        const positionArray = positions[view] || positions.default;
-        return new THREE.Vector3(positionArray[0], positionArray[1], positionArray[2]);
-    }, []);
-
-    // Handle view changes - memoized
-    const handleViewChange = useCallback((view) => {
-        if (!controlsRef.current || animating) return;
-
-        if (view === 'frame') {
-            setAnimating(true);
-
-            // Get bounding box of the model
-            const box = new THREE.Box3().setFromObject(modelRef.current);
-            const size = box.getSize(new THREE.Vector3());
-            const center = box.getCenter(new THREE.Vector3());
-
-            // Calculate optimal distance
-            const maxDim = Math.max(size.x, size.y, size.z);
-            let distance;
-
-            if (isOrthographic) {
-                // For orthographic, we just need enough space
-                distance = maxDim * 1.2;
-            } else {
-                // For perspective, calculate based on FOV
-                const fov = currentCameraRef.current.fov * (Math.PI / 180);
-                distance = maxDim / (2 * Math.tan(fov / 2)) * 1.2;
-            }
-
-            // Get isometric direction
-            const direction = new THREE.Vector3(1, 1, 1).normalize();
-
-            // Calculate new position
-            const position = center.clone().add(direction.multiplyScalar(distance));
-
-            // Animate to the new position
-            animateCamera(position, center);
-            return;
-        }
-
-        setAnimating(true);
-
-        // Calculate target (center of the model)
-        const target = new THREE.Vector3(0, 0, 0);
-
-        // Update model size in the camera manager if needed
-        const modelSize = getModelSize();
-        if (modelSize !== cameraStateManager.modelSize) {
-            cameraStateManager.updateModelSize(modelSize);
-        }
-
-        // Get new position based on view
-        const newPosition = cameraStateManager.getPositionForView(view);
-
-        // Animate to the new position
-        animateCamera(newPosition, target);
-    }, [animating, getModelSize, isOrthographic, animateCamera]);
-
-
     // Set optimal initial view based on model size
     const setOptimalInitialView = useCallback((model) => {
         if (!model || !cameraRef.current || !controlsRef.current || initialPositionSet) {
             return;
         }
 
-        // Calculate bounding box to find the optimal distance
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-
-        // Get isometric position
-        const isometricPosition = calculateViewPosition('isometric', maxDim);
-
-        // Set camera position
-        cameraRef.current.position.copy(isometricPosition);
-        controlsRef.current.target.set(0, 0, 0);
-        controlsRef.current.update();
-
-        setInitialPositionSet(true);
-    }, [initialPositionSet, calculateViewPosition]);
+        const success = viewManager.setOptimalInitialView(model, cameraRef.current, controlsRef.current);
+        if (success) {
+            setInitialPositionSet(true);
+        }
+    }, [initialPositionSet]);
 
     // Setup lighting - extracted as a separate function
     const setupLighting = useCallback((scene) => {
@@ -538,6 +400,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                 }
             });
         }
+        // Clean up view manager
+        viewManager.cleanup();
 
         // Dispose of renderer
         if (rendererRef.current) {
@@ -563,6 +427,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         if (animationRef.current) {
             cancelAnimationFrame(animationRef.current);
         }
+
     }, []);
 
     const handleResize = useCallback(() => {
@@ -756,6 +621,8 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     // Effect to initialize Three.js
     useEffect(() => {
         initThreeJS();
+        // Initialize the view manager
+        viewManager.initialize(cameraStateManager, getModelSize);
         // Window resize event listener
         window.addEventListener('resize', handleResize);
 
@@ -772,37 +639,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
 
         };
     }, [container, modelUrl, binUrl, handleResize, cleanupResources, initThreeJS]);
-
-    // Add event listener for keyboard shortcuts
-    useEffect(() => {
-        const handleKeyDown = (event) => {
-            // Numpad keys
-            switch (event.code) {
-                case 'Numpad1':
-                    handleViewChange('front');
-                    break;
-                case 'Numpad3':
-                    handleViewChange('right');
-                    break;
-                case 'Numpad7':
-                    handleViewChange('top');
-                    break;
-                case 'Numpad5':
-                    toggleCameraMode();
-                    break;
-                case 'Home':
-                    handleViewChange('frame');
-                    break;
-                default:
-                    break;
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [handleViewChange, toggleCameraMode]);
 
     return (
         <div className="model-viewer-wrapper">
@@ -835,7 +671,12 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     />
 
                     <ViewControls
-                        onViewChange={handleViewChange}
+                        cameraManager={cameraStateManager}
+                        currentCamera={currentCameraRef.current}
+                        controls={controlsRef.current}
+                        modelRef={modelRef}
+                        isOrthographic={isOrthographic}
+                        setAnimating={setAnimating}
                     />
 
                     {/* Add the new grid controls */}
