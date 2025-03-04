@@ -55,15 +55,15 @@ const ScalingControls = ({
         if (lineInfo.plane === 'XZ') {
             // Create X-axis measurement line
             points = [
-                new THREE.Vector3(-gridSize/2, 0.01, 0),
-                new THREE.Vector3(gridSize/2, 0.01, 0)
+                new THREE.Vector3( 0, 0, -gridSize/2),
+                new THREE.Vector3(0, 0, gridSize/2)
             ];
 
             // Add labels
             for (let i = -Math.floor(gridDivisions/2); i <= Math.floor(gridDivisions/2); i++) {
                 const labelMesh = createTextLabel(
                     `${i * unitValue}${unitType}`,
-                    new THREE.Vector3(i * (gridSize/gridDivisions), 0.1, 0),
+                    new THREE.Vector3(0, 0, i * (gridSize/gridDivisions)),
                     lineInfo.color
                 );
                 labels.push(labelMesh);
@@ -71,15 +71,15 @@ const ScalingControls = ({
         } else if (lineInfo.plane === 'XY') {
             // Create vertical X-axis measurement line
             points = [
-                new THREE.Vector3(-gridSize/2, 0, 0.01),
-                new THREE.Vector3(gridSize/2, 0, 0.01)
+                new THREE.Vector3(-gridSize/2, 0, 0),
+                new THREE.Vector3(gridSize/2, 0, 0)
             ];
 
             // Add labels
             for (let i = -Math.floor(gridDivisions/2); i <= Math.floor(gridDivisions/2); i++) {
                 const labelMesh = createTextLabel(
                     `${i * unitValue}${unitType}`,
-                    new THREE.Vector3(i * (gridSize/gridDivisions), 0, 0.1),
+                    new THREE.Vector3(i * (gridSize/gridDivisions), 0, 0),
                     lineInfo.color
                 );
                 labels.push(labelMesh);
@@ -87,15 +87,15 @@ const ScalingControls = ({
         } else if (lineInfo.plane === 'YZ') {
             // Create Y-axis measurement line
             points = [
-                new THREE.Vector3(0.01, -gridSize/2, 0),
-                new THREE.Vector3(0.01, gridSize/2, 0)
+                new THREE.Vector3(0, -gridSize/2, 0),
+                new THREE.Vector3(0, gridSize/2, 0)
             ];
 
             // Add labels
             for (let i = -Math.floor(gridDivisions/2); i <= Math.floor(gridDivisions/2); i++) {
                 const labelMesh = createTextLabel(
                     `${i * unitValue}${unitType}`,
-                    new THREE.Vector3(0.1, i * (gridSize/gridDivisions), 0),
+                    new THREE.Vector3(0, i * (gridSize/gridDivisions), 0),
                     lineInfo.color
                 );
                 labels.push(labelMesh);
@@ -273,7 +273,7 @@ const ScalingControls = ({
                             <button
                                 onClick={() => addMeasurementLine('XZ')}
                                 disabled={selectedLines.some(l => l.plane === 'XZ') || selectedLines.length >= 4}
-                                style={{ padding: '4px', fontSize: '12px' }}
+                                style={{ fontSize: '12px' }}
                             >
                                 XZ Grid (Floor)
                             </button>
@@ -283,7 +283,7 @@ const ScalingControls = ({
                             <button
                                 onClick={() => addMeasurementLine('XY')}
                                 disabled={selectedLines.some(l => l.plane === 'XY') || selectedLines.length >= 4}
-                                style={{ padding: '4px', fontSize: '12px' }}
+                                style={{ fontSize: '12px' }}
                             >
                                 XY Grid (Front)
                             </button>
@@ -293,7 +293,7 @@ const ScalingControls = ({
                             <button
                                 onClick={() => addMeasurementLine('YZ')}
                                 disabled={selectedLines.some(l => l.plane === 'YZ') || selectedLines.length >= 4}
-                                style={{ padding: '4px', fontSize: '12px' }}
+                                style={{ fontSize: '12px' }}
                             >
                                 YZ Grid (Side)
                             </button>
