@@ -758,6 +758,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         renderer={rendererRef.current}
                         currentCamera={currentCameraRef.current}
                     />
+
                 </ViewerControls>
             )}
             <KeyboardShortcuts

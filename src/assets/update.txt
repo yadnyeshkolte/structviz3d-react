@@ -1,0 +1,8 @@
+                    <SVGExportControls
+                        scene={sceneRef.current}
+                        renderer={rendererRef.current}
+                        currentCamera={currentCameraRef.current}
+                        modelName={modelUrl ? modelUrl.split('/').pop().split('.')[0] : 'model'}
+                    />
+
+import SVGExportControls from './svg/SVGExportControls.jsx';
