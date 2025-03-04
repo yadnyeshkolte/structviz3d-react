@@ -14,18 +14,13 @@ const ScalingControls = ({
     const [unitType, setUnitType] = useState('m');
     const [selectedLines, setSelectedLines] = useState([]);
 
-    // Functions for enabling/disabling scaling, setting unit values,
-    // selecting grid lines, and showing measurements
-
     // Add a measurement line to a grid plane
     const addMeasurementLine = useCallback((planeName) => {
-        if (selectedLines.length >= 4) return;
-
-        // Create a measurement line for the selected plane
         const newLine = {
             id: Date.now().toString(),
             plane: planeName,
-            color: getRandomColor()
+            color: getRandomColor(),
+            visible: true  // New property to track visibility
         };
 
         // Create the actual visual elements
@@ -38,6 +33,39 @@ const ScalingControls = ({
         scene.add(visual.line);
         visual.labels.forEach(label => scene.add(label));
     }, [scene, selectedLines, gridDivisions, unitValue, unitType]);
+
+    // Toggle visibility of a specific measurement line
+    const toggleLineVisibility = useCallback((index) => {
+        const updatedLines = [...selectedLines];
+        const lineToToggle = updatedLines[index];
+        lineToToggle.visible = !lineToToggle.visible;
+
+        // Remove or add visual elements based on visibility
+        if (lineToToggle.visual) {
+            if (lineToToggle.visible) {
+                scene.add(lineToToggle.visual.line);
+                lineToToggle.visual.labels.forEach(label => scene.add(label));
+            } else {
+                scene.remove(lineToToggle.visual.line);
+                lineToToggle.visual.labels.forEach(label => scene.remove(label));
+            }
+        }
+
+        setSelectedLines(updatedLines);
+    }, [scene, selectedLines]);
+
+    // Remove a measurement line
+    const removeMeasurementLine = useCallback((index) => {
+        const lineToRemove = selectedLines[index];
+
+        // Remove visual elements from the scene
+        if (lineToRemove.visual) {
+            scene.remove(lineToRemove.visual.line);
+            lineToRemove.visual.labels.forEach(label => scene.remove(label));
+        }
+
+        setSelectedLines(prev => prev.filter((_, i) => i !== index));
+    }, [scene, selectedLines]);
 
     // Create visual elements for measurement lines
     const createMeasurementVisual = useCallback((lineInfo) => {
@@ -132,19 +160,6 @@ const ScalingControls = ({
         return sprite;
     }, []);
 
-    // Remove a measurement line
-    const removeMeasurementLine = useCallback((index) => {
-        const lineToRemove = selectedLines[index];
-
-        // Remove visual elements from the scene
-        if (lineToRemove.visual) {
-            scene.remove(lineToRemove.visual.line);
-            lineToRemove.visual.labels.forEach(label => scene.remove(label));
-        }
-
-        setSelectedLines(prev => prev.filter((_, i) => i !== index));
-    }, [scene, selectedLines]);
-
     // Utility function to get random colors for lines
     const getRandomColor = () => {
         const colors = ['#FF5252', '#FFEB3B', '#2196F3', '#4CAF50', '#9C27B0', '#FF9800'];
@@ -166,8 +181,13 @@ const ScalingControls = ({
         // Create updated visuals with new values
         const updatedLines = selectedLines.map(line => {
             const newVisual = createMeasurementVisual(line);
-            scene.add(newVisual.line);
-            newVisual.labels.forEach(label => scene.add(label));
+
+            // Only add to scene if the line was previously visible
+            if (line.visible) {
+                scene.add(newVisual.line);
+                newVisual.labels.forEach(label => scene.add(label));
+            }
+
             return { ...line, visual: newVisual };
         });
 
@@ -260,7 +280,15 @@ const ScalingControls = ({
                                 fontSize: '12px',
                                 color: 'white'
                             }}>
-                                <span>Scale {index + 1} - {line.plane}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={line.visible}
+                                        onChange={() => toggleLineVisibility(index)}
+                                        style={{ marginRight: '4px' }}
+                                    />
+                                    <span>Scale {index + 1} - {line.plane}</span>
+                                </div>
                                 <button
                                     onClick={() => removeMeasurementLine(index)}
                                     style={{
@@ -277,14 +305,13 @@ const ScalingControls = ({
                         ))}
                     </div>
 
-                    {/* Add new measurement line buttons (only show applicable grid planes) */}
+                    {/* Add new measurement line buttons (now independent) */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <p style={{ margin: '0', fontSize: '12px', color: 'white' }}>Add Measurement Line:</p>
 
                         {showXZGrid && (
                             <button
                                 onClick={() => addMeasurementLine('XZ')}
-                                disabled={selectedLines.some(l => l.plane === 'XZ') || selectedLines.length >= 4}
                                 style={{ fontSize: '12px' }}
                             >
                                 XZ Grid (Floor)
@@ -294,7 +321,6 @@ const ScalingControls = ({
                         {showXYGrid && (
                             <button
                                 onClick={() => addMeasurementLine('XY')}
-                                disabled={selectedLines.some(l => l.plane === 'XY') || selectedLines.length >= 4}
                                 style={{ fontSize: '12px' }}
                             >
                                 XY Grid (Front)
@@ -304,7 +330,6 @@ const ScalingControls = ({
                         {showYZGrid && (
                             <button
                                 onClick={() => addMeasurementLine('YZ')}
-                                disabled={selectedLines.some(l => l.plane === 'YZ') || selectedLines.length >= 4}
                                 style={{ fontSize: '12px' }}
                             >
                                 YZ Grid (Side)
