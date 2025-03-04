@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as THREE from 'three';
 
 const ScalingControls = ({
@@ -13,6 +13,10 @@ const ScalingControls = ({
     const [unitValue, setUnitValue] = useState(1);
     const [unitType, setUnitType] = useState('m');
     const [selectedLines, setSelectedLines] = useState([]);
+    const [labelSize, setLabelSize] = useState({ width: 32, height: 16 });
+    const labelSizeRef = useRef({ width: 32, height: 16 });
+    const isDraggingRef = useRef(false);
+    const startYRef = useRef(0);
 
     // Add a measurement line to a grid plane
     const addMeasurementLine = useCallback((planeName) => {
@@ -130,13 +134,15 @@ const ScalingControls = ({
     const createTextLabel = useCallback((text, position, color) => {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-        canvas.width = 32;
-        canvas.height = 16;
+
+        // Ensure width is always twice the height
+        canvas.width = labelSizeRef.current.width;
+        canvas.height = labelSizeRef.current.height;
 
         context.fillStyle = 'rgba(0, 0, 0, 0)';
         context.fillRect(0, 0, canvas.width, canvas.height);
 
-        context.font = '12px Arial';
+        context.font = '30px Arial';
         context.fillStyle = color;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
@@ -151,6 +157,31 @@ const ScalingControls = ({
         return sprite;
     }, []);
 
+    const handleLabelSizeDragStart = useCallback((e) => {
+        isDraggingRef.current = true;
+        startYRef.current = e.clientY;
+        document.addEventListener('mousemove', handleLabelSizeDrag);
+        document.addEventListener('mouseup', handleLabelSizeDragEnd);
+    }, []);
+
+    const handleLabelSizeDrag = useCallback((e) => {
+        if (!isDraggingRef.current) return;
+
+        const deltaY = startYRef.current - e.clientY;
+        const newHeight = Math.max(64, Math.min(labelSizeRef.current.height + deltaY, 400));
+        const newWidth = newHeight * 3;
+
+        labelSizeRef.current = { width: newWidth, height: newHeight };
+        setLabelSize({ width: newWidth, height: newHeight });
+
+        startYRef.current = e.clientY;
+    }, []);
+
+    const handleLabelSizeDragEnd = useCallback(() => {
+        isDraggingRef.current = false;
+        document.removeEventListener('mousemove', handleLabelSizeDrag);
+        document.removeEventListener('mouseup', handleLabelSizeDragEnd);
+    }, []);
     // Remove a measurement line
     const removeMeasurementLine = useCallback((index) => {
         const lineToRemove = selectedLines[index];
@@ -240,20 +271,20 @@ const ScalingControls = ({
             {enabled && (
                 <>
                     {/* Unit configuration (remains the same) */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <label style={{ color: 'white', fontSize: '12px' }}>Unit Value:</label>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                        <label style={{color: 'white', fontSize: '12px'}}>Unit Value:</label>
                         <input
                             type="number"
                             min="0.001"
                             step="0.1"
                             value={unitValue}
                             onChange={(e) => setUnitValue(parseFloat(e.target.value))}
-                            style={{ width: '60px' }}
+                            style={{width: '60px'}}
                         />
                         <select
                             value={unitType}
                             onChange={(e) => setUnitType(e.target.value)}
-                            style={{ padding: '2px' }}
+                            style={{padding: '2px'}}
                         >
                             <option value="mm">mm</option>
                             <option value="cm">cm</option>
@@ -266,7 +297,7 @@ const ScalingControls = ({
                     </div>
 
                     {/* Selected measurement lines display with visibility toggle */}
-                    <div style={{ maxHeight: '120px', overflowY: 'auto' }}>
+                    <div style={{maxHeight: '120px', overflowY: 'auto'}}>
                         {selectedLines.map((line, index) => (
                             <div key={index} style={{
                                 display: 'flex',
@@ -279,12 +310,12 @@ const ScalingControls = ({
                                 fontSize: '12px',
                                 color: 'white'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                                     <input
                                         type="checkbox"
                                         checked={line.isVisible}
                                         onChange={() => toggleLineVisibility(index)}
-                                        style={{ marginRight: '8px' }}
+                                        style={{marginRight: '8px'}}
                                     />
                                     <span>Scale {index + 1} - {line.plane}</span>
                                 </div>
@@ -305,13 +336,13 @@ const ScalingControls = ({
                     </div>
 
                     {/* Add new measurement line buttons */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <p style={{ margin: '0', fontSize: '12px', color: 'white' }}>Add Measurement Line:</p>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                        <p style={{margin: '0', fontSize: '12px', color: 'white'}}>Add Measurement Line:</p>
 
                         {showXZGrid && (
                             <button
                                 onClick={() => addMeasurementLine('XZ')}
-                                style={{ fontSize: '12px' }}
+                                style={{fontSize: '12px'}}
                             >
                                 XZ Grid (Floor)
                             </button>
@@ -320,7 +351,7 @@ const ScalingControls = ({
                         {showXYGrid && (
                             <button
                                 onClick={() => addMeasurementLine('XY')}
-                                style={{ fontSize: '12px' }}
+                                style={{fontSize: '12px'}}
                             >
                                 XY Grid (Front)
                             </button>
@@ -329,12 +360,49 @@ const ScalingControls = ({
                         {showYZGrid && (
                             <button
                                 onClick={() => addMeasurementLine('YZ')}
-                                style={{ fontSize: '12px' }}
+                                style={{fontSize: '12px'}}
                             >
                                 YZ Grid (Side)
                             </button>
                         )}
                     </div>
+
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        backgroundColor: 'rgba(0,0,0,0.2)',
+                        padding: '8px',
+                        borderRadius: '4px'
+                    }}>
+                        <span style={{color: 'white', fontSize: '12px'}}>Label Size:</span>
+                        <div
+                            onMouseDown={handleLabelSizeDragStart}
+                            style={{
+                                width: '100px',
+                                height: '10px',
+                                backgroundColor: 'rgba(255,255,255,0.2)',
+                                cursor: 'ns-resize',
+                                position: 'relative',
+                                borderRadius: '5px'
+                            }}
+                        >
+                            <div style={{
+                                position: 'absolute',
+                                left: '0',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                width: `${(labelSize.height / 64) * 100}%`,
+                                height: '100%',
+                                backgroundColor: '#4CAF50',
+                                borderRadius: '5px'
+                            }}/>
+                        </div>
+                        <span style={{color: 'white', fontSize: '12px'}}>
+                            {labelSize.height.toFixed(0)}px
+                        </span>
+                    </div>
+
                 </>
             )}
         </div>
