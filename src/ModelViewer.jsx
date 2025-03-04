@@ -16,6 +16,8 @@ import ViewerControlsUtils from './ViewerControlsUtils';
 import OrientationControls from './OrientationControls';
 import WireframeControls from './wireframe/WireframeControls.jsx';
 import EnhancedWireframeMode from './wireframe/EnhancedWireframeMode.js';
+import ScalingControls from './ScalingControls';
+
 
 // Constants
 const DEFAULT_COLOR = '#999999';
@@ -43,6 +45,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [yzGridColor, setYZGridColor] = useState('#2196F3');
     const [isWireframe, setIsWireframe] = useState(false);
     const [dragModeEnabled, setDragModeEnabled] = useState(false);
+    const [scalingEnabled, setScalingEnabled] = useState(false);
 
     // Refs
     const sceneRef = useRef(null);
@@ -58,6 +61,9 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
 
+    const toggleScaling = useCallback(() => {
+        setScalingEnabled(prev => !prev);
+    }, []);
 
     const toggleDragMode = useCallback(() => {
         const newDragMode = !dragModeEnabled;
@@ -744,7 +750,15 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         onXYGridColorChange={handleXYGridColorChange}
                         onYZGridColorChange={handleYZGridColorChange}
                     />
-
+                    <ScalingControls
+                        scene={sceneRef.current}
+                        showXZGrid={showXZGrid}
+                        showXYGrid={showXYGrid}
+                        showYZGrid={showYZGrid}
+                        gridDivisions={gridDivisions}
+                        enabled={scalingEnabled}
+                        onToggleScaling={toggleScaling}
+                    />
                     {/* Add the new Orientation Controls */}
                     <OrientationControls
                         modelGroup={modelGroupRef.current}
