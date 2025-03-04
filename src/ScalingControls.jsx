@@ -13,7 +13,6 @@ const ScalingControls = ({
     const [unitValue, setUnitValue] = useState(1);
     const [unitType, setUnitType] = useState('m');
     const [selectedLines, setSelectedLines] = useState([]);
-    const [measurementLabels, setMeasurementLabels] = useState([]);
 
     // Functions for enabling/disabling scaling, setting unit values,
     // selecting grid lines, and showing measurements
@@ -40,7 +39,7 @@ const ScalingControls = ({
         visual.labels.forEach(label => scene.add(label));
     }, [scene, selectedLines, gridDivisions, unitValue, unitType]);
 
-// Create visual elements for measurement lines
+    // Create visual elements for measurement lines
     const createMeasurementVisual = useCallback((lineInfo) => {
         const material = new THREE.LineBasicMaterial({
             color: lineInfo.color,
@@ -55,15 +54,15 @@ const ScalingControls = ({
         if (lineInfo.plane === 'XZ') {
             // Create X-axis measurement line
             points = [
-                new THREE.Vector3( 0, 0, -gridSize/2),
-                new THREE.Vector3(0, 0, gridSize/2)
+                new THREE.Vector3(0, 0, -gridSize / 2),
+                new THREE.Vector3(0, 0, gridSize / 2)
             ];
 
             // Add labels
-            for (let i = -Math.floor(gridDivisions/2); i <= Math.floor(gridDivisions/2); i++) {
+            for (let i = -Math.floor(gridDivisions / 2); i <= Math.floor(gridDivisions / 2); i++) {
                 const labelMesh = createTextLabel(
                     `${i * unitValue}${unitType}`,
-                    new THREE.Vector3(0, 0, i * (gridSize/gridDivisions)),
+                    new THREE.Vector3(0, 0, i * (gridSize / gridDivisions)),
                     lineInfo.color
                 );
                 labels.push(labelMesh);
@@ -71,15 +70,15 @@ const ScalingControls = ({
         } else if (lineInfo.plane === 'XY') {
             // Create vertical X-axis measurement line
             points = [
-                new THREE.Vector3(-gridSize/2, 0, 0),
-                new THREE.Vector3(gridSize/2, 0, 0)
+                new THREE.Vector3(-gridSize / 2, 0, 0),
+                new THREE.Vector3(gridSize / 2, 0, 0)
             ];
 
             // Add labels
-            for (let i = -Math.floor(gridDivisions/2); i <= Math.floor(gridDivisions/2); i++) {
+            for (let i = -Math.floor(gridDivisions / 2); i <= Math.floor(gridDivisions / 2); i++) {
                 const labelMesh = createTextLabel(
                     `${i * unitValue}${unitType}`,
-                    new THREE.Vector3(i * (gridSize/gridDivisions), 0, 0),
+                    new THREE.Vector3(i * (gridSize / gridDivisions), 0, 0),
                     lineInfo.color
                 );
                 labels.push(labelMesh);
@@ -87,15 +86,15 @@ const ScalingControls = ({
         } else if (lineInfo.plane === 'YZ') {
             // Create Y-axis measurement line
             points = [
-                new THREE.Vector3(0, -gridSize/2, 0),
-                new THREE.Vector3(0, gridSize/2, 0)
+                new THREE.Vector3(0, -gridSize / 2, 0),
+                new THREE.Vector3(0, gridSize / 2, 0)
             ];
 
             // Add labels
-            for (let i = -Math.floor(gridDivisions/2); i <= Math.floor(gridDivisions/2); i++) {
+            for (let i = -Math.floor(gridDivisions / 2); i <= Math.floor(gridDivisions / 2); i++) {
                 const labelMesh = createTextLabel(
                     `${i * unitValue}${unitType}`,
-                    new THREE.Vector3(0, i * (gridSize/gridDivisions), 0),
+                    new THREE.Vector3(0, i * (gridSize / gridDivisions), 0),
                     lineInfo.color
                 );
                 labels.push(labelMesh);
@@ -108,7 +107,7 @@ const ScalingControls = ({
         return { line, labels };
     }, [gridDivisions, unitValue, unitType]);
 
-// Create text labels for measurements
+    // Create text labels for measurements
     const createTextLabel = useCallback((text, position, color) => {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
@@ -133,7 +132,7 @@ const ScalingControls = ({
         return sprite;
     }, []);
 
-// Remove a measurement line
+    // Remove a measurement line
     const removeMeasurementLine = useCallback((index) => {
         const lineToRemove = selectedLines[index];
 
@@ -146,13 +145,13 @@ const ScalingControls = ({
         setSelectedLines(prev => prev.filter((_, i) => i !== index));
     }, [scene, selectedLines]);
 
-// Utility function to get random colors for lines
+    // Utility function to get random colors for lines
     const getRandomColor = () => {
         const colors = ['#FF5252', '#FFEB3B', '#2196F3', '#4CAF50', '#9C27B0', '#FF9800'];
         return colors[Math.floor(Math.random() * colors.length)];
     };
 
-// Update measurement lines when gridDivisions or unitValue changes
+    // Update measurement lines when gridDivisions or unitValue changes
     useEffect(() => {
         if (!enabled || selectedLines.length === 0) return;
 
@@ -175,7 +174,7 @@ const ScalingControls = ({
         setSelectedLines(updatedLines);
     }, [enabled, scene, gridDivisions, unitValue, unitType, createMeasurementVisual]);
 
-// Cleanup function
+    // Cleanup function
     useEffect(() => {
         return () => {
             selectedLines.forEach(line => {
@@ -187,6 +186,19 @@ const ScalingControls = ({
         };
     }, [scene, selectedLines]);
 
+    // Effect to handle enabling/disabling scaling
+    useEffect(() => {
+        if (!enabled) {
+            // Remove all measurement lines when scaling is disabled
+            selectedLines.forEach(line => {
+                if (line.visual) {
+                    scene.remove(line.visual.line);
+                    line.visual.labels.forEach(label => scene.remove(label));
+                }
+            });
+            setSelectedLines([]);
+        }
+    }, [enabled, scene, selectedLines]);
 
     return (
         <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
