@@ -41,19 +41,55 @@ const WireframeControls = ({
         }
     };
 
+    const resetMaterials = () => {
+        if (modelRef.current) {
+            modelRef.current.traverse((child) => {
+                if (child.isMesh) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(material => {
+                            material.wireframe = false;
+                        });
+                    } else if (child.material) {
+                        child.material.wireframe = false;
+                    }
+                }
+            });
+        }
+    };
+
     const toggleDrawingMode = () => {
         const newWireframeState = !isWireframe;
-        toggleWireframe();
 
-        if (newWireframeState) {
+        if (!newWireframeState) {
+            // Turning off wireframe - handle both simple and pencil modes
+            EnhancedWireframeMode.applyPencilView(scene, renderer, currentCamera, false);
+            resetMaterials();
+        } else {
             // Turning on wireframe
             if (mode === 'pencil') {
                 EnhancedWireframeMode.applyPencilView(scene, renderer, currentCamera, true);
+            } else {
+                // Simple wireframe mode
+                if (modelRef.current) {
+                    modelRef.current.traverse((child) => {
+                        if (child.isMesh) {
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(material => {
+                                    material.wireframe = true;
+                                    material.wireframeLinewidth = 2;
+                                });
+                            } else if (child.material) {
+                                child.material.wireframe = true;
+                                child.material.wireframeLinewidth = 2;
+                            }
+                        }
+                    });
+                }
             }
-        } else {
-            // Turning off wireframe
-            EnhancedWireframeMode.applyPencilView(scene, renderer, currentCamera, false);
         }
+
+        // Call toggleWireframe after handling the material changes
+        toggleWireframe();
     };
 
     return (
