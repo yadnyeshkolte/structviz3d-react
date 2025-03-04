@@ -112,8 +112,8 @@ const ScalingControls = ({
     const createTextLabel = useCallback((text, position, color) => {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-        canvas.width = 64;
-        canvas.height = 32;
+        canvas.width = 32;
+        canvas.height = 16;
 
         context.fillStyle = 'rgba(0, 0, 0, 0)';
         context.fillRect(0, 0, canvas.width, canvas.height);
