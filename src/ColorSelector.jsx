@@ -96,7 +96,7 @@ const ColorSelector = ({ currentColor, onColorChange }) => {
                         position: 'relative',
                         top: '45px',
                         right: '0',
-                        width: '180px',
+                        width: '235px',
                         backgroundColor: 'white',
                         borderRadius: '8px',
                         boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
@@ -110,7 +110,7 @@ const ColorSelector = ({ currentColor, onColorChange }) => {
                     {/* Preset colors grid */}
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gridTemplateColumns: 'repeat(4, 1fr)',
                         gap: '8px'
                     }}>
                         {colorPalette.map((color) => (
