@@ -267,12 +267,12 @@ const ScaleControls = ({
         } else if (plane === 'yz') {
             if (direction === 'y') {
                 // Y-axis scale on side wall
-                start = new THREE.Vector3(-halfGrid, -halfGrid, 0);
-                end = new THREE.Vector3(-halfGrid, halfGrid, 0);
+                start = new THREE.Vector3(0, -halfGrid, -halfGrid);
+                end = new THREE.Vector3(0, halfGrid, -halfGrid);
             } else { // z direction
                 // Z-axis scale on side wall
-                start = new THREE.Vector3(-halfGrid, 0, -halfGrid);
-                end = new THREE.Vector3(-halfGrid, 0, halfGrid);
+                start = new THREE.Vector3(0, 0, -halfGrid);
+                end = new THREE.Vector3(0, 0, halfGrid);
             }
         }
 
@@ -596,7 +596,7 @@ const ScaleControls = ({
             {scalingEnabled && (
                 <>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <label style={{ color: 'white', fontSize: '12px', width: '80px' }}>Unit Size:</label>
+                        <label style={{ color: 'white', fontSize: '12px', width: '40px' }}>Unit Size:</label>
                         <input
                             type="number"
                             min="0.01"
@@ -620,10 +620,10 @@ const ScaleControls = ({
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <label style={{ color: 'white', fontSize: '12px', width: '80px' }}>Text Size:</label>
+                        <label style={{ color: 'white', fontSize: '12px', width: '40px' }}>Text Size:</label>
                         <input
                             type="range"
-                            min="0.5"
+                            min="0.1"
                             max="2"
                             step="0.1"
                             value={textSize}
@@ -704,7 +704,7 @@ const ScaleControls = ({
                             {activePlane === 'yz' ? 'Add Y Scale' : 'Add X Scale'}
                         </button>
                         <button
-                            onClick={() => addScale(activePlane === 'xy' ? 'y' : 'z')}
+                            onClick={() => addScale(activePlane === 'yz' ? 'y' : 'z')}
                             style={{
                                 padding: '6px 12px',
                                 background: '#2196F3',
@@ -740,11 +740,13 @@ const ScaleControls = ({
                     )}
 
                     {selectedGridLine && (
-                        <div style={{ marginTop: '8px', color: 'white', fontSize: '12px' }}>
-                            <p style={{ margin: '0 0 8px 0' }}>Selected: {selectedGridLine.plane.toUpperCase()} {selectedGridLine.direction.toUpperCase()}</p>
-                            <p style={{ margin: '0 0 4px 0' }}>Use WASD to move the scale</p>
-                            <p style={{ margin: '0', fontSize: '10px' }}>
-                                Position: X:{selectedGridLine.position.x} Y:{selectedGridLine.position.y} Z:{selectedGridLine.position.z}
+                        <div style={{marginTop: '8px', color: 'white', fontSize: '12px'}}>
+                            <p style={{margin: '0 0 8px 0'}}>Selected: {selectedGridLine.plane.toUpperCase()} {selectedGridLine.direction.toUpperCase()}</p>
+                            <p style={{margin: '0 0 4px 0'}}>Use WS to move the scale</p>
+                            <p style={{margin: '0 0 4px 0'}}>Use AD to move the scale in 3D</p>
+                            <p style={{margin: '0', fontSize: '10px'}}>
+                                Position:
+                                X:{selectedGridLine.position.x} Y:{selectedGridLine.position.y} Z:{selectedGridLine.position.z}
                             </p>
                         </div>
                     )}
