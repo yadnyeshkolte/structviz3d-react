@@ -2,13 +2,23 @@ import React, { useState } from 'react';
 import './App.css';
 import FileUpload from './FileUpload';
 import ModelViewer from './ModelViewer';
-import { Upload, LayoutTemplate } from 'lucide-react';
+import { Upload, LayoutTemplate, ChevronDown } from 'lucide-react';
 
 function App() {
     const [modelUrl, setModelUrl] = useState(null);
     const [binUrl, setBinUrl] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [showUploadScreen, setShowUploadScreen] = useState(true);
+    const [showSampleDropdown, setShowSampleDropdown] = useState(false);
+
+    const sampleModels = [
+        { name: 'Crane', file: 'crane.stl' },
+        { name: 'House', file: 'house.stl' },
+        { name: 'Luffing Crane', file: 'luffingcrane.stl' },
+        { name: 'Modern Villa', file: 'modernvilla.stl' },
+        { name: 'Pantheon', file: 'pantheon.stl' },
+        { name: 'Transformer', file: 'transformer.stl' }
+    ];
 
     const handleModelLoad = (data) => {
         setIsLoading(true);
@@ -22,11 +32,16 @@ function App() {
         setShowUploadScreen(false);
     };
 
-    const handleSampleModel = () => {
+    const handleSampleModel = (fileName) => {
         setIsLoading(true);
-        setModelUrl('/src/assets/transformer.stl');
+        setModelUrl(`https://raw.githubusercontent.com/yadnyeshkolte/structviz3d-react/stlfiles/${fileName}`);
         setBinUrl(null);
         setShowUploadScreen(false);
+        setShowSampleDropdown(false);
+    };
+
+    const toggleSampleDropdown = () => {
+        setShowSampleDropdown(!showSampleDropdown);
     };
 
     const handleNewUpload = () => {
@@ -47,12 +62,33 @@ function App() {
                         </header>
 
                         <div className="options-container">
-                            <div className="option-card" onClick={handleSampleModel}>
+                            <div className="option-card">
                                 <div className="option-icon">
                                     <LayoutTemplate size={48} />
                                 </div>
-                                <h2>Try Sample Model</h2>
-                                <p>Test the viewer with our pre-loaded transformer model</p>
+                                <h2>Try Sample Models</h2>
+                                <p>Test the viewer with our pre-loaded models</p>
+                                <div className="sample-selector">
+                                    <button
+                                        className="sample-dropdown-button"
+                                        onClick={toggleSampleDropdown}
+                                    >
+                                        Select a Model <ChevronDown size={16} />
+                                    </button>
+                                    {showSampleDropdown && (
+                                        <div className="sample-dropdown-menu">
+                                            {sampleModels.map((model) => (
+                                                <div
+                                                    key={model.file}
+                                                    className="sample-dropdown-item"
+                                                    onClick={() => handleSampleModel(model.file)}
+                                                >
+                                                    {model.name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="option-card">
@@ -66,10 +102,6 @@ function App() {
                                 </div>
                             </div>
                         </div>
-
-                        <footer className="App-footer">
-                            <p>StructViz3D {new Date().getFullYear()}</p>
-                        </footer>
                     </div>
                 </div>
             ) : (
