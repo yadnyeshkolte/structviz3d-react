@@ -24,7 +24,7 @@ function App() {
 
     const handleSampleModel = () => {
         setIsLoading(true);
-        setModelUrl('https://raw.githubusercontent.com/yadnyeshkolte/structviz3d-react/main/src/assets/transformer.stl');
+        setModelUrl('https://raw.githubusercontent.com/yadnyeshkolte/structviz3d-react/stlfiles/modernvilla.stl');
         setBinUrl(null);
         setShowUploadScreen(false);
     };
