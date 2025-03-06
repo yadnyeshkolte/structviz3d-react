@@ -353,7 +353,7 @@ body, html {
     background-color: white;
     transition: all 0.3s ease;
     cursor: pointer;
-    min-height: 300px;
+    min-height: 250px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -397,6 +397,66 @@ body, html {
     margin-top: 12px;
     font-weight: 500;
 }
+
+/* Sample Model Selector Styles */
+.sample-selector {
+    position: relative;
+    width: 100%;
+    max-width: 240px;
+    margin: 0 auto;
+}
+
+.sample-dropdown-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px 16px;
+    background-color: #4285F4;
+    color: lightblue;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.sample-dropdown-button:hover {
+    background-color: #3367d6;
+}
+
+.sample-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    color: #333;
+    background-color: white;
+    border-radius: 8px;
+    margin-top: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.sample-dropdown-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    text-align: left;
+}
+
+.sample-dropdown-item:hover {
+    background-color: #f5f5f5;
+}
+
+.sample-dropdown-item:not(:last-child) {
+    border-bottom: 1px solid #f0f0f0;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .App-header h1 {
@@ -441,7 +501,9 @@ body, html {
         max-width: 80%;
         max-height: 70vh;
     }
-
+    .sample-selector {
+        max-width: 100%;
+    }
 }
 
 @media (max-width: 480px) {
