@@ -737,17 +737,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         isOrthographic={isOrthographic}
                         setAnimating={setAnimating}
                     />
-                    <ColorSelector
-                        currentColor={modelColor}
-                        onColorChange={updateModelColor}
-                    />
-
-                    <SpotlightControls
-                        scene={sceneRef.current}
-                        camera={currentCameraRef.current}
-                        enabled={spotlightEnabled}
-                        onToggle={toggleSpotlight}
-                    />
                     {/* Add the new grid controls */}
                     <GridControls
                         scene={sceneRef.current}
@@ -776,7 +765,17 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         xyGridColor={xyGridColor}
                         yzGridColor={yzGridColor}
                     />
+                    <ColorSelector
+                        currentColor={modelColor}
+                        onColorChange={updateModelColor}
+                    />
 
+                    <SpotlightControls
+                        scene={sceneRef.current}
+                        camera={currentCameraRef.current}
+                        enabled={spotlightEnabled}
+                        onToggle={toggleSpotlight}
+                    />
                     {/* Add the new Orientation Controls */}
                     <OrientationControls
                         modelGroup={modelGroupRef.current}

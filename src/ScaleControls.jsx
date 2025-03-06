@@ -578,37 +578,51 @@ const ScaleControls = ({
     }, [camera]);
 
     return (
-        <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '12px', background: '#222', borderRadius: '4px' }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', color: 'white' }}>Unit Scale Controls</h3>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <label style={{ display: 'flex', alignItems: 'center', color: 'white', fontSize: '12px' }}>
-                    <input
-                        type="checkbox"
-                        checked={scalingEnabled}
-                        onChange={toggleScaling}
-                        style={{ marginRight: '8px' }}
-                    />
-                    Enable Unit Scaling
-                </label>
+        <div style={{
+            padding: '8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            background: '#4d4d4D',
+            borderRadius: '4px'
+        }}>
+            <h3 style={{margin: '0 0 8px 0', fontSize: '14px', color: 'white'}}>Scale Controls</h3>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <button
+                    onClick={toggleScaling}
+                    style={{
+                        padding: '6px 12px',
+                        background: scalingEnabled ? '#4CAF50' : '#676767',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        width: '100%',
+                        textAlign: 'center',
+                        transition: 'background-color 0.3s'
+                    }}
+                >
+                    {scalingEnabled ? '✘ Unit Scaling' : '✓ Unit Scaling'}
+                </button>
             </div>
 
             {scalingEnabled && (
                 <>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <label style={{ color: 'white', fontSize: '12px', width: '40px' }}>Unit Size:</label>
+                    <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                        <label style={{color: 'white', fontSize: '12px', width: '40px'}}>Unit Size:</label>
                         <input
                             type="number"
                             min="0.01"
                             step="0.01"
                             value={unitSize}
                             onChange={(e) => setUnitSize(e.target.value)}
-                            style={{ width: '60px', padding: '4px' }}
+                            style={{width: '60px', padding: '4px'}}
                         />
                         <select
                             value={unitType}
                             onChange={(e) => setUnitType(e.target.value)}
-                            style={{ padding: '4px' }}
+                            style={{padding: '4px'}}
                         >
                             <option value="m">m</option>
                             <option value="cm">cm</option>
@@ -619,8 +633,8 @@ const ScaleControls = ({
                         </select>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <label style={{ color: 'white', fontSize: '12px', width: '40px' }}>Text Size:</label>
+                    <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                        <label style={{color: 'white', fontSize: '12px', width: '40px'}}>Text Size:</label>
                         <input
                             type="range"
                             min="0.1"
@@ -628,14 +642,14 @@ const ScaleControls = ({
                             step="0.1"
                             value={textSize}
                             onChange={(e) => setTextSize(parseFloat(e.target.value))}
-                            style={{ flex: 1 }}
+                            style={{flex: 1}}
                         />
-                        <span style={{ color: 'white', fontSize: '12px', width: '30px' }}>{textSize.toFixed(1)}</span>
+                        <span style={{color: 'white', fontSize: '12px', width: '30px'}}>{textSize.toFixed(1)}</span>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ color: 'white', fontSize: '12px' }}>Active Plane:</label>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                        <label style={{color: 'white', fontSize: '12px'}}>Active Plane:</label>
+                        <div style={{display: 'flex', gap: '8px'}}>
                             <button
                                 onClick={() => handlePlaneChange('xz')}
                                 style={{
@@ -687,7 +701,7 @@ const ScaleControls = ({
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>
                         <button
                             onClick={() => addScale('x')}
                             style={{
@@ -721,7 +735,7 @@ const ScaleControls = ({
                     </div>
 
                     {selectedGridLine && (
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>
                             <button
                                 onClick={() => removeScale(selectedGridLine.id)}
                                 style={{
@@ -752,9 +766,9 @@ const ScaleControls = ({
                     )}
 
                     {scales.length > 0 && (
-                        <div style={{ marginTop: '8px' }}>
-                            <p style={{ color: 'white', fontSize: '12px', margin: '0 0 8px 0' }}>Active Scales:</p>
-                            <div style={{ maxHeight: '120px', overflowY: 'auto' }}>
+                        <div style={{marginTop: '8px'}}>
+                            <p style={{color: 'white', fontSize: '12px', margin: '0 0 8px 0'}}>Active Scales:</p>
+                            <div style={{maxHeight: '120px', overflowY: 'auto'}}>
                                 {scales.map((scale) => (
                                     <div
                                         key={scale.id}
