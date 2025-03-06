@@ -2,21 +2,22 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 
 const ScaleControls = ({
-                               scene,
-                               gridDivisions,
-                               showXZGrid,
-                               showXYGrid,
-                               showYZGrid,
-                               xzGridColor,
-                               xyGridColor,
-                               yzGridColor,
-                               camera
-                           }) => {
+                           scene,
+                           gridDivisions,
+                           showXZGrid,
+                           showXYGrid,
+                           showYZGrid,
+                           xzGridColor,
+                           xyGridColor,
+                           yzGridColor,
+                           camera
+                       }) => {
     // Scale settings
     const [scalingEnabled, setScalingEnabled] = useState(false);
     const [activePlane, setActivePlane] = useState('xz'); // Default to floor plane
     const [selectedGridLine, setSelectedGridLine] = useState(null);
     const [scales, setScales] = useState([]);
+    const [numberDensity, setNumberDensity] = useState(5);
 
     // Unit settings
     const [unitSize, setUnitSize] = useState(1);
@@ -27,6 +28,7 @@ const ScaleControls = ({
     const scaleObjectsRef = useRef([]);
     const gridSizeRef = useRef(10); // Default grid size, should match GridControls
     const prevGridDivisionsRef = useRef(gridDivisions);
+    const numberDensityRef = useRef(numberDensity);
 
     // Clean up scales when component unmounts
     useEffect(() => {
@@ -52,10 +54,15 @@ const ScaleControls = ({
         }
     }, [gridDivisions]);
 
-    // Update all scales when unit size changes
+    // Keep numberDensityRef in sync with state
+    useEffect(() => {
+        numberDensityRef.current = numberDensity;
+    }, [numberDensity]);
+
+    // Update all scales when unit size, type, text size or number density changes
     useEffect(() => {
         updateAllScales();
-    }, [unitSize, unitType, textSize]);
+    }, [unitSize, unitType, textSize, numberDensity]);
 
     const removeScaleElements = (scale) => {
         if (!scene) return;
@@ -108,7 +115,7 @@ const ScaleControls = ({
         scaleObjectsRef.current.forEach(scale => {
             updateScaleNumbers(scale);
         });
-    }, [unitSize, unitType, textSize]);
+    }, [unitSize, unitType, textSize, numberDensity]);
 
     const updateScaleNumbers = useCallback((scale) => {
         if (!scale.line || !scene) return;
@@ -129,15 +136,18 @@ const ScaleControls = ({
         const numberLabels = [];
         const formattedUnitSize = parseFloat(unitSize);
 
+        // Use the current numberDensity value from the ref to ensure we have the latest value
+        const currentNumberDensity = numberDensityRef.current;
+
         for (let i = -divisions; i <= divisions; i++) {
             // Skip the origin (0) for cleaner display
             if (i === 0 && scale.skipOrigin) continue;
 
+            // Skip numbers based on density setting
+            if (i % currentNumberDensity !== 0) continue;
+
             // Calculate physical value at this position
             const value = i * formattedUnitSize;
-
-            // Skip some numbers if there are too many divisions
-            if (divisions > 10 && i % Math.ceil(divisions / 10) !== 0) continue;
 
             // Calculate position for the number
             let position = new THREE.Vector3();
@@ -577,6 +587,16 @@ const ScaleControls = ({
         };
     }, [camera]);
 
+    // Handle real-time updates for number density slider
+    const handleNumberDensityChange = (e) => {
+        const newDensity = parseInt(e.target.value);
+        setNumberDensity(newDensity);
+        // Immediately update the ref to ensure the latest value is used
+        numberDensityRef.current = newDensity;
+        // Immediately update all scales to reflect the new density
+        updateAllScales();
+    };
+
     return (
         <div style={{
             padding: '8px',
@@ -632,21 +652,73 @@ const ScaleControls = ({
                             <option value="">units</option>
                         </select>
                     </div>
-
-                    <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
-                        <label style={{color: 'white', fontSize: '12px', width: '40px'}}>Text Size:</label>
-                        <input
-                            type="range"
-                            min="0.1"
-                            max="2"
-                            step="0.1"
-                            value={textSize}
-                            onChange={(e) => setTextSize(parseFloat(e.target.value))}
-                            style={{flex: 1}}
-                        />
-                        <span style={{color: 'white', fontSize: '12px', width: '30px'}}>{textSize.toFixed(1)}</span>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                        {/* Text and number input side by side */}
+                        <div style={{display: 'flex', gap: '8px'}}>
+                            <div style={{flex: 1, color: 'white', fontSize: '12px', padding: '4px'}}>
+                                Number Density
+                            </div>
+                            <input
+                                type="number"
+                                min="1"
+                                max={Math.max(10, Math.floor(gridDivisions / 2))}
+                                value={numberDensity}
+                                onChange={(e) => handleNumberDensityChange({target: {value: e.target.value}})}
+                                style={{width: '60px', textAlign: 'center'}}
+                            />
+                        </div>
+                        {/* Existing sliders remain unchanged */}
+                        <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                            <input
+                                type="range"
+                                min="1"
+                                max={Math.max(10, Math.floor(gridDivisions / 2))}
+                                step="1"
+                                value={numberDensity}
+                                onChange={handleNumberDensityChange}
+                                style={{flex: 1}}
+                            />
+                            <span style={{
+                                color: 'white',
+                                fontSize: '12px',
+                                width: '40px',
+                                textAlign: 'right'
+                            }}>1:{numberDensity}</span>
+                        </div>
+                        {/* Second row: Text and text size input */}
+                        <div style={{display: 'flex', gap: '8px', marginBottom: '8px'}}>
+                            <div style={{flex: 1, color: 'white', fontSize: '12px', padding: '4px'}}>
+                                Text Size
+                            </div>
+                            <input
+                                type="number"
+                                min="0.1"
+                                max="2"
+                                step="0.1"
+                                value={textSize}
+                                onChange={(e) => setTextSize(parseFloat(e.target.value))}
+                                style={{width: '60px', textAlign: 'center'}}
+                            />
+                        </div>
+                        {/* Text Size slider */}
+                        <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                            <input
+                                type="range"
+                                min="0.1"
+                                max="2"
+                                step="0.1"
+                                value={textSize}
+                                onChange={(e) => setTextSize(parseFloat(e.target.value))}
+                                style={{flex: 1}}
+                            />
+                            <span style={{
+                                color: 'white',
+                                fontSize: '12px',
+                                width: '30px',
+                                textAlign: 'right'
+                            }}>{textSize.toFixed(1)}</span>
+                        </div>
                     </div>
-
                     <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
                         <label style={{color: 'white', fontSize: '12px'}}>Active Plane:</label>
                         <div style={{display: 'flex', gap: '8px'}}>

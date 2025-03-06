@@ -40,7 +40,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [showXYGrid, setShowXYGrid] = useState(false);
     const [showYZGrid, setShowYZGrid] = useState(false);
     const [gridDivisions, setGridDivisions] = useState(20);
-    const [xzGridColor, setXZGridColor] = useState('#CFCFCF');
+    const [xzGridColor, setXZGridColor] = useState('#696969');
     const [xyGridColor, setXYGridColor] = useState('#8BC34A');
     const [yzGridColor, setYZGridColor] = useState('#2196F3');
     const [isWireframe, setIsWireframe] = useState(false);
