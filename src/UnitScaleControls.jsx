@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 
-const ScaleControls = ({
+const UnitScaleControls = ({
                                scene,
                                gridDivisions,
                                showXZGrid,
@@ -193,7 +193,7 @@ const ScaleControls = ({
 
         // Draw text
         context.font = 'bold 32px Arial';
-        context.fillStyle = color || '#000000';
+        context.fillStyle = color || '#FFFFFF';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillText(text, canvas.width / 2, canvas.height / 2);
@@ -403,7 +403,7 @@ const ScaleControls = ({
         const scale = scaleObjectsRef.current.find(s => s.id === scaleId);
         if (scale) {
             // Highlight the selected scale
-            scale.line.material.color.set('#000000'); // Yellow highlight
+            scale.line.material.color.set('#FFFF00'); // Yellow highlight
             setSelectedGridLine(scale);
 
             // Also switch to the plane this scale is on
@@ -799,4 +799,4 @@ const ScaleControls = ({
     );
 };
 
-export default ScaleControls;
+export default UnitScaleControls;
