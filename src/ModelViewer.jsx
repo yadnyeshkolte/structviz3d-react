@@ -719,17 +719,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     dragModeEnabled={dragModeEnabled}
                     toggleDragMode={toggleDragMode}
                 >
-                    <ColorSelector
-                        currentColor={modelColor}
-                        onColorChange={updateModelColor}
-                    />
-
-                    <SpotlightControls
-                        scene={sceneRef.current}
-                        camera={currentCameraRef.current}
-                        enabled={spotlightEnabled}
-                        onToggle={toggleSpotlight}
-                    />
                     <CameraControls
                         isOrthographic={isOrthographic}
                         toggleCameraMode={toggleCameraMode}
@@ -742,7 +731,17 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         isOrthographic={isOrthographic}
                         setAnimating={setAnimating}
                     />
+                    <ColorSelector
+                        currentColor={modelColor}
+                        onColorChange={updateModelColor}
+                    />
 
+                    <SpotlightControls
+                        scene={sceneRef.current}
+                        camera={currentCameraRef.current}
+                        enabled={spotlightEnabled}
+                        onToggle={toggleSpotlight}
+                    />
                     {/* Add the new grid controls */}
                     <GridControls
                         scene={sceneRef.current}

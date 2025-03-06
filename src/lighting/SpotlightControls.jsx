@@ -132,7 +132,7 @@ const SpotlightControls = ({ scene, camera, enabled, onToggle }) => {
             marginTop: '8px'
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0px' }}>
-                <h3 style={{ margin: 0, fontSize: '16px', color: 'white' }}>Torch</h3>
+                <h3 style={{ margin: 0, fontSize: '16px', color: 'white' }}>Lighting Controls</h3>
                 <button
                     onClick={onToggle}
                     style={{
