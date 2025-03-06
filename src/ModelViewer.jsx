@@ -18,6 +18,7 @@ import WireframeControls from './wireframe/WireframeControls.jsx';
 import EnhancedWireframeMode from './wireframe/EnhancedWireframeMode.js';
 import SpotlightControls from './lighting/SpotlightControls.jsx';
 import ScaleControls from './ScaleControls';
+import ModelOriginControls from './ModelOriginControls';
 
 // Constants
 const DEFAULT_COLOR = '#999999';
@@ -764,6 +765,15 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         xzGridColor={xzGridColor}
                         xyGridColor={xyGridColor}
                         yzGridColor={yzGridColor}
+                    />
+                    <ModelOriginControls
+                        modelGroupRef={modelGroupRef}
+                        modelRef={modelRef}
+                        scene={sceneRef.current}
+                        gridDivisions={gridDivisions}
+                        showXZGrid={showXZGrid}
+                        showXYGrid={showXYGrid}
+                        showYZGrid={showYZGrid}
                     />
                     <ColorSelector
                         currentColor={modelColor}
