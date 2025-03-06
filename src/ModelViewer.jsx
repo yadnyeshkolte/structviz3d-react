@@ -16,6 +16,7 @@ import ViewerControlsUtils from './ViewerControlsUtils';
 import OrientationControls from './OrientationControls';
 import WireframeControls from './wireframe/WireframeControls.jsx';
 import EnhancedWireframeMode from './wireframe/EnhancedWireframeMode.js';
+import SpotlightControls from './lighting/SpotlightControls.jsx';
 
 // Constants
 const DEFAULT_COLOR = '#999999';
@@ -43,6 +44,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [yzGridColor, setYZGridColor] = useState('#2196F3');
     const [isWireframe, setIsWireframe] = useState(false);
     const [dragModeEnabled, setDragModeEnabled] = useState(false);
+    const [spotlightEnabled, setSpotlightEnabled] = useState(false);
 
     // Refs
     const sceneRef = useRef(null);
@@ -57,6 +59,10 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const perspectiveCameraRef = useRef(null);
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
+
+    const toggleSpotlight = useCallback(() => {
+        setSpotlightEnabled(prev => !prev);
+    }, []);
 
     const toggleDragMode = useCallback(() => {
         const newDragMode = !dragModeEnabled;
@@ -445,6 +451,13 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         viewManager.cleanup();
 
         if (sceneRef.current) {
+            const spotlight = sceneRef.current.getObjectByName('modelTorch');
+            const target = sceneRef.current.getObjectByName('spotlightTarget');
+            if (spotlight) sceneRef.current.remove(spotlight);
+            if (target) sceneRef.current.remove(target);
+        }
+
+        if (sceneRef.current) {
             EnhancedWireframeMode.applyPencilView(sceneRef.current, rendererRef.current, currentCameraRef.current, false);
         }
         // Dispose of renderer
@@ -711,11 +724,16 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         onColorChange={updateModelColor}
                     />
 
+                    <SpotlightControls
+                        scene={sceneRef.current}
+                        camera={currentCameraRef.current}
+                        enabled={spotlightEnabled}
+                        onToggle={toggleSpotlight}
+                    />
                     <CameraControls
                         isOrthographic={isOrthographic}
                         toggleCameraMode={toggleCameraMode}
                     />
-
                     <ViewControls
                         cameraManager={cameraStateManager}
                         currentCamera={currentCameraRef.current}
