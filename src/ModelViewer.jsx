@@ -17,6 +17,7 @@ import OrientationControls from './OrientationControls';
 import WireframeControls from './wireframe/WireframeControls.jsx';
 import EnhancedWireframeMode from './wireframe/EnhancedWireframeMode.js';
 import SpotlightControls from './lighting/SpotlightControls.jsx';
+import ScaleControls from './ScaleControls';
 
 // Constants
 const DEFAULT_COLOR = '#999999';
@@ -45,6 +46,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [isWireframe, setIsWireframe] = useState(false);
     const [dragModeEnabled, setDragModeEnabled] = useState(false);
     const [spotlightEnabled, setSpotlightEnabled] = useState(false);
+    const [scalingEnabled, setScalingEnabled] = useState(false);
 
     // Refs
     const sceneRef = useRef(null);
@@ -59,6 +61,10 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const perspectiveCameraRef = useRef(null);
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
+
+    const toggleScaling = useCallback(() => {
+        setScalingEnabled(prev => !prev);
+    }, []);
 
     const toggleSpotlight = useCallback(() => {
         setSpotlightEnabled(prev => !prev);
@@ -759,6 +765,16 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                         onXZGridColorChange={handleXZGridColorChange}
                         onXYGridColorChange={handleXYGridColorChange}
                         onYZGridColorChange={handleYZGridColorChange}
+                    />
+                    <ScaleControls
+                        scene={sceneRef.current}
+                        gridDivisions={gridDivisions}
+                        showXZGrid={showXZGrid}
+                        showXYGrid={showXYGrid}
+                        showYZGrid={showYZGrid}
+                        xzGridColor={xzGridColor}
+                        xyGridColor={xyGridColor}
+                        yzGridColor={yzGridColor}
                     />
                     {/* Add the new Orientation Controls */}
                     <OrientationControls
