@@ -18,7 +18,6 @@ import WireframeControls from './wireframe/WireframeControls.jsx';
 import EnhancedWireframeMode from './wireframe/EnhancedWireframeMode.js';
 import SpotlightControls from './lighting/SpotlightControls.jsx';
 import ScaleControls from './ScaleControls';
-import UnitScaleControls from './UnitScaleControls';
 
 // Constants
 const DEFAULT_COLOR = '#999999';
