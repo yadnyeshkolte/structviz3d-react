@@ -1,26 +1,19 @@
-image: node:16.5.0
-
-stages:
-  - build
-  - test
-  - deploy
-
-build:
-  stage: build
+image: node:lts
+pages:
+  stage: deploy
+  cache:
+    key:
+      files:
+        - package-lock.json
+      prefix: npm
+    paths:
+      - node_modules/
   script:
-    - npm install --frozen-lockfile --check-files --non-interactive
-    - npm run build --base=$CI_PAGES_URL
+    - npm install
+    - npm run build
     - cp -a dist/. public/
   artifacts:
     paths:
       - public
-
-deploy-staging:
-  stage: deploy
-  script:
-    - echo 'Staging deployment job'
-  artifacts:
-    paths:
-      - public
-  except:
-    - master
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
