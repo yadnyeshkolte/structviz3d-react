@@ -623,7 +623,7 @@ const ScaleControls = ({
                         transition: 'background-color 0.3s'
                     }}
                 >
-                    {scalingEnabled ? '✘ Unit Scaling' : '✓ Unit Scaling'}
+                    {scalingEnabled ? '✘ Unit Scaling' : 'Enable Unit Scaling'}
                 </button>
             </div>
 

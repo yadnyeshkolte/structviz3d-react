@@ -51,6 +51,7 @@ const ModelOriginControls = ({
 
     // Position model with its base at the origin, keeping X and Z positions
     const baseAtOrigin = () => {
+
         if (!modelGroupRef || !modelGroupRef.current || !modelRef || !modelRef.current) return;
 
         // Store current X and Z positions
