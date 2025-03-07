@@ -4,7 +4,6 @@ const KeyboardShortcuts = ({ isVisible, onClose }) => {
     const shortcuts = [
         { key: 'f', action: 'Toggle fullscreen' },
         { key: 'h', action: 'Toggle controls visibility' },
-        { key: 'k', action: 'Show/hide keyboard shortcuts' },
         { key: 'Esc', action: 'Exit locked mode / close popups' },
         { key: '5', action: 'Toggle perspective/orthographic camera' },
         { key: '+/-', action: 'Zoom in/out' },
