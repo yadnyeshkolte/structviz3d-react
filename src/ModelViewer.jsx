@@ -47,7 +47,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const [isWireframe, setIsWireframe] = useState(false);
     const [dragModeEnabled, setDragModeEnabled] = useState(false);
     const [spotlightEnabled, setSpotlightEnabled] = useState(false);
-    const [scalingEnabled, setScalingEnabled] = useState(false);
 
     // Refs
     const sceneRef = useRef(null);
@@ -62,10 +61,6 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const perspectiveCameraRef = useRef(null);
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
-
-    const toggleScaling = useCallback(() => {
-        setScalingEnabled(prev => !prev);
-    }, []);
 
     const toggleSpotlight = useCallback(() => {
         setSpotlightEnabled(prev => !prev);
