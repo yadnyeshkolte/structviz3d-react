@@ -612,7 +612,7 @@ const ScaleControls = ({
                     onClick={toggleScaling}
                     style={{
                         padding: '6px 12px',
-                        background: scalingEnabled ? '#4CAF50' : '#676767',
+                        background: scalingEnabled ? '#4CAF50' : '#2196F3',
                         color: 'white',
                         border: 'none',
                         borderRadius: '4px',

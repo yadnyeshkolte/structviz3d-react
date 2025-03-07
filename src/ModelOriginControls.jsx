@@ -80,6 +80,62 @@ const ModelOriginControls = ({
         setOriginZ(currentZ);
     };
 
+    // Position model with its right edge at the origin, keeping Y and Z positions
+    const rightEdgeAtOrigin = () => {
+        if (!modelGroupRef || !modelGroupRef.current || !modelRef || !modelRef.current) return;
+
+        // Store current Y and Z positions
+        const currentY = modelGroupRef.current.position.y;
+        const currentZ = modelGroupRef.current.position.z;
+
+        // Temporarily move the model to origin for bounding box calculation
+        modelGroupRef.current.position.set(0, 0, 0);
+        modelRef.current.updateMatrixWorld(true);
+
+        // Calculate bounding box in this reset state
+        const bbox = new THREE.Box3().setFromObject(modelRef.current);
+
+        // Calculate the offset needed to place the right edge at x=0
+        // The right edge is at the maximum x value of the bounding box
+        const offsetX = -bbox.max.x;
+
+        // Move the model to align its right edge with the origin while keeping Y and Z
+        modelGroupRef.current.position.set(offsetX, currentY, currentZ);
+
+        // Update state to reflect new position
+        setOriginX(offsetX);
+        setOriginY(currentY);
+        setOriginZ(currentZ);
+    };
+
+    // Position model with its left edge at the origin, keeping Y and Z positions
+    const leftEdgeAtOrigin = () => {
+        if (!modelGroupRef || !modelGroupRef.current || !modelRef || !modelRef.current) return;
+
+        // Store current Y and Z positions
+        const currentY = modelGroupRef.current.position.y;
+        const currentZ = modelGroupRef.current.position.z;
+
+        // Temporarily move the model to origin for bounding box calculation
+        modelGroupRef.current.position.set(0, 0, 0);
+        modelRef.current.updateMatrixWorld(true);
+
+        // Calculate bounding box in this reset state
+        const bbox = new THREE.Box3().setFromObject(modelRef.current);
+
+        // Calculate the offset needed to place the left edge at x=0
+        // The left edge is at the minimum x value of the bounding box
+        const offsetX = -bbox.min.x;
+
+        // Move the model to align its left edge with the origin while keeping Y and Z
+        modelGroupRef.current.position.set(offsetX, currentY, currentZ);
+
+        // Update state to reflect new position
+        setOriginX(offsetX);
+        setOriginY(currentY);
+        setOriginZ(currentZ);
+    };
+
     return (
         <div className="control-panel">
             <div className="control-panel-content">
@@ -122,6 +178,38 @@ const ModelOriginControls = ({
                         }}
                     >
                         Base at Origin
+                    </button>
+                    <button
+                        className="control-button"
+                        onClick={leftEdgeAtOrigin}
+                        title="Position the left edge of the model at the origin"
+                        style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '6px',
+                            fontSize: '12px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Left Edge at Origin
+                    </button>
+                    <button
+                        className="control-button"
+                        onClick={rightEdgeAtOrigin}
+                        title="Position the right edge of the model at the origin"
+                        style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '6px',
+                            fontSize: '12px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Right Edge at Origin
                     </button>
                 </div>
 
