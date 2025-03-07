@@ -424,8 +424,7 @@ const ScaleControls = ({
     const deselectScale = useCallback(() => {
         if (selectedGridLine) {
             // Reset the color of the previously selected scale
-            const originalColor = getColorForPlane(selectedGridLine.plane);
-            selectedGridLine.line.material.color.set(originalColor);
+            selectedGridLine.line.material.color.set('#FFFFFF');
             setSelectedGridLine(null);
         }
     }, [selectedGridLine, getColorForPlane]);

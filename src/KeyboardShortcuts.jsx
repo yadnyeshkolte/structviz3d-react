@@ -8,12 +8,12 @@ const KeyboardShortcuts = ({ isVisible, onClose }) => {
         { key: '5', action: 'Toggle perspective/orthographic camera' },
         { key: '+/-', action: 'Zoom in/out' },
         { key: 'o', action: 'Reset model orientation' },
-        { key: 'w', action: 'Toggle wireframe mode' },
+        { key: 'q', action: 'Toggle wireframe mode' },
         { key: 'x', action: 'Toggle floor grid (XZ)' },
         { key: 'y', action: 'Toggle side grid (XY)' },
         { key: 'z', action: 'Toggle side grid (YZ)' },
         { key: 'd', action: 'Toggle drag/rotate mode' },
-        { key: 's', action: 'Toggle spotlight' },
+        { key: 'e', action: 'Toggle spotlight' },
     ];
 
     if (!isVisible) return null;

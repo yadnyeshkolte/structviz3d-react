@@ -137,8 +137,73 @@ const ModelOriginControls = ({
         setOriginZ(currentZ);
     };
 
+    // Position model with its back side at the origin, keeping X and Y positions
+    const backSideAtOrigin = () => {
+        if (!modelGroupRef || !modelGroupRef.current || !modelRef || !modelRef.current) return;
+
+        // Store current X and Y positions
+        const currentX = modelGroupRef.current.position.x;
+        const currentY = modelGroupRef.current.position.y;
+
+        // Temporarily move the model to origin for bounding box calculation
+        modelGroupRef.current.position.set(0, 0, 0);
+        modelRef.current.updateMatrixWorld(true);
+
+        // Calculate bounding box in this reset state
+        const bbox = new THREE.Box3().setFromObject(modelRef.current);
+
+        // Calculate the offset needed to place the front side at z=0
+        // The front side is at the minimum z value of the bounding box
+        const offsetZ = -bbox.min.z;
+
+        // Move the model to align its front side with the origin while keeping X and Y
+        modelGroupRef.current.position.set(currentX, currentY, offsetZ);
+
+        // Update state to reflect new position
+        setOriginX(currentX);
+        setOriginY(currentY);
+        setOriginZ(offsetZ);
+    };
+
+    // Position model with its front side at the origin, keeping X and Y positions
+    const frontSideAtOrigin = () => {
+        if (!modelGroupRef || !modelGroupRef.current || !modelRef || !modelRef.current) return;
+
+        // Store current X and Y positions
+        const currentX = modelGroupRef.current.position.x;
+        const currentY = modelGroupRef.current.position.y;
+
+        // Temporarily move the model to origin for bounding box calculation
+        modelGroupRef.current.position.set(0, 0, 0);
+        modelRef.current.updateMatrixWorld(true);
+
+        // Calculate bounding box in this reset state
+        const bbox = new THREE.Box3().setFromObject(modelRef.current);
+
+        // Calculate the offset needed to place the back side at z=0
+        // The back side is at the maximum z value of the bounding box
+        const offsetZ = -bbox.max.z;
+
+        // Move the model to align its back side with the origin while keeping X and Y
+        modelGroupRef.current.position.set(currentX, currentY, offsetZ);
+
+        // Update state to reflect new position
+        setOriginX(currentX);
+        setOriginY(currentY);
+        setOriginZ(offsetZ);
+    };
+
     return (
-        <div className="control-panel">
+        <div className="control-panel"
+             style={{
+                 padding: '8px',
+                 display: 'flex',
+                 flexDirection: 'column',
+                 gap: '12px',
+                 background: '#4d4d4D',
+                 borderRadius: '4px'
+             }}>
+            <h3 style={{margin: '0 0 8px 0', fontSize: '14px', color: 'white'}}>Origin Controls</h3>
             <div className="control-panel-content">
 
                 <div className="button-group"
@@ -212,10 +277,42 @@ const ModelOriginControls = ({
                     >
                         Right Edge at Origin
                     </button>
+                    <button
+                        className="control-button"
+                        onClick={frontSideAtOrigin}
+                        title="Position the front side of the model at the origin"
+                        style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '6px',
+                            fontSize: '12px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Front Side at Origin
+                    </button>
+                    <button
+                        className="control-button"
+                        onClick={backSideAtOrigin}
+                        title="Position the back side of the model at the origin"
+                        style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '6px',
+                            fontSize: '12px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Back Side at Origin
+                    </button>
                 </div>
 
                 <div className="control-row">
-                    <label style={{ color: 'white', fontSize: '12px', width: '50px', margin: '5px' }}>X Position:</label>
+                    <label style={{color: 'white', fontSize: '12px', width: '50px', margin: '5px'}}>X Position:</label>
                     <input
                         type="number"
                         value={originX}
@@ -248,7 +345,7 @@ const ModelOriginControls = ({
                 </div>
 
                 <div className="control-row">
-                    <label style={{ color: 'white', fontSize: '12px', width: '50px', margin: '5px' }}>Y Position:</label>
+                    <label style={{color: 'white', fontSize: '12px', width: '50px', margin: '5px'}}>Y Position:</label>
                     <input
                         type="number"
                         value={originY}
@@ -281,7 +378,7 @@ const ModelOriginControls = ({
                 </div>
 
                 <div className="control-row">
-                    <label style={{ color: 'white', fontSize: '12px', width: '50px', margin: '5px' }}>Z Position:</label>
+                    <label style={{color: 'white', fontSize: '12px', width: '50px', margin: '5px'}}>Z Position:</label>
                     <input
                         type="number"
                         value={originZ}

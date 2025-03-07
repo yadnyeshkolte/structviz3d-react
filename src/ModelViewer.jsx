@@ -724,12 +724,12 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
             if (e.key === 'o') resetModelOrientation();
 
             // Visualization toggles
-            if (e.key === 'w') toggleWireframe();
+            if (e.key === 'q') toggleWireframe();
             if (e.key === 'x') toggleXZGrid(); // Toggle floor grid
             if (e.key === 'y') toggleXYGrid(); // Toggle side grid
             if (e.key === 'z') toggleYZGrid(); // Toggle other side grid
             if (e.key === 'd') toggleDragMode(); // Toggle drag/rotate mode
-            if (e.key === 's') toggleSpotlight(); // Toggle spotlight
+            if (e.key === 'e') toggleSpotlight(); // Toggle spotlight
         };
 
         window.addEventListener('keydown', handleKeyDown);

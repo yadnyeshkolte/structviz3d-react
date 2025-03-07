@@ -14,9 +14,11 @@ function App() {
     const sampleModels = [
         { name: 'Crane', file: 'crane.stl' },
         { name: 'House', file: 'house.stl' },
-        { name: 'Luffing Crane', file: 'luffingcrane.stl' },
-        { name: 'Modern Villa', file: 'modernvilla.stl' },
         { name: 'Pantheon', file: 'pantheon.stl' },
+        { name: 'Modern Villa', file: 'modernvilla.stl' },
+        { name: 'Torre Latinoamericana', file: 'torrelatinoamericana.stl' },
+        { name: 'Burj Khalifa', file: 'burjkhalifa.stl' },
+        { name: 'Luffing Crane', file: 'luffingcrane.stl' },
         { name: 'Transformer', file: 'transformer.stl' }
     ];
 
