@@ -67,7 +67,7 @@ function App() {
                                     <LayoutTemplate size={48} />
                                 </div>
                                 <h2>Try Sample Models</h2>
-                                <p>Test the viewer with our pre-loaded models</p>
+                                <p>Test the viewer with pre-loaded models</p>
                                 <div className="sample-selector">
                                     <button
                                         className="sample-dropdown-button"
