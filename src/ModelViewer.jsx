@@ -62,6 +62,34 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
     const orthographicCameraRef = useRef(null);
     const currentCameraRef = useRef(null); // Points to active camera
 
+    const captureScreenshot = useCallback(() => {
+        if (!rendererRef.current) return;
+
+        // Temporarily hide controls for screenshot
+        const controlsVisibilityState = controlsVisible;
+        setControlsVisible(false);
+
+        // Render the scene without controls
+        if (rendererRef.current && sceneRef.current && currentCameraRef.current) {
+            rendererRef.current.render(sceneRef.current, currentCameraRef.current);
+        }
+
+        // Capture the rendered image
+        const screenshot = rendererRef.current.domElement.toDataURL('image/png');
+
+        // Create download link
+        const downloadLink = document.createElement('a');
+        downloadLink.href = screenshot;
+        downloadLink.download = `model-screenshot-${new Date().toISOString().slice(0, 10)}.png`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        // Restore controls visibility
+        setControlsVisible(controlsVisibilityState);
+    }, [controlsVisible, rendererRef, sceneRef, currentCameraRef]);
+
+
     const toggleSpotlight = useCallback(() => {
         setSpotlightEnabled(prev => !prev);
     }, []);
@@ -677,6 +705,45 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
         return cleanupResources;
     }, [modelUrl, cleanupResources]);
 
+    // Add this useEffect for keyboard shortcuts near the other useEffect hooks
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Skip if inputs or textareas are focused
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            // Basic view controls
+            if (e.key === 'f') toggleFullscreen();
+            if (e.key === 'h') setControlsVisible(prev => !prev); // Toggle controls visibility
+            if (e.key === 'Escape' && controlsLocked) setControlsLocked(false);
+
+            // Camera controls
+            if (e.key === '5') toggleCameraMode(); // Toggle between perspective and orthographic
+            if (e.key === '+' || e.key === '=') handleZoomIn();
+            if (e.key === '-' || e.key === '_') handleZoomOut();
+
+            if (e.key === 'o') resetModelOrientation();
+
+            // Visualization toggles
+            if (e.key === 'w') toggleWireframe();
+            if (e.key === 'x') toggleXZGrid(); // Toggle floor grid
+            if (e.key === 'y') toggleXYGrid(); // Toggle side grid
+            if (e.key === 'z') toggleYZGrid(); // Toggle other side grid
+            if (e.key === 'd') toggleDragMode(); // Toggle drag/rotate mode
+            if (e.key === 's') toggleSpotlight(); // Toggle spotlight
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [
+        toggleFullscreen, toggleCameraMode, handleZoomIn, handleZoomOut,
+        toggleWireframe, toggleXZGrid, toggleXYGrid, toggleYZGrid,
+        toggleDragMode, toggleSpotlight, resetModelOrientation, toggleShortcuts,
+        controlsLocked, updateModelColor
+    ]);
+
+
     // Effect to initialize Three.js
     useEffect(() => {
         initThreeJS();
@@ -720,6 +787,7 @@ const ModelViewer = ({ modelUrl, binUrl, onLoad }) => {
                     onZoomOut={handleZoomOut}
                     dragModeEnabled={dragModeEnabled}
                     toggleDragMode={toggleDragMode}
+                    captureScreenshot={captureScreenshot}
                 >
                     <CameraControls
                         isOrthographic={isOrthographic}

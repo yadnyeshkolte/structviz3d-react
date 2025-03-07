@@ -10,7 +10,8 @@ const ViewerControls = ({
                             onZoomIn,
                             onZoomOut,
                             dragModeEnabled,
-                            toggleDragMode
+                            toggleDragMode,
+                            captureScreenshot
                         }) => {
     return (
         <div className={`viewer-controls ${visible ? 'visible' : 'hidden'}`} style={{
@@ -38,6 +39,35 @@ const ViewerControls = ({
                 gap: '8px',
                 alignSelf: 'flex-end'
             }}>
+                <button
+                    onClick={captureScreenshot}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
+                        width: '40px',
+                        height: '40px',
+                        alignSelf: 'flex-end',
+                        marginTop: '8px'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                    title="Take Screenshot"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                         strokeLinecap="round" strokeLinejoin="round">
+                        <path
+                            d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                </button>
                 <button
                     onClick={onToggleShortcuts} // Add this prop to ViewerControls
                     style={{
