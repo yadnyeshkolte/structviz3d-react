@@ -10,16 +10,9 @@ pages:
       - node_modules/
   script:
     - npm install
-    # Debug: Print the variable (masked) to verify it exists
-    - echo "Checking if VITE_APP_API_URL exists: ${VITE_APP_API_URL:+true}"
-    # Create .env file
+    # Create a .env file with your variable before building
     - echo "VITE_APP_API_URL=$VITE_APP_API_URL" > .env
-    # Debug: Check .env file was created (without showing content)
-    - ls -la .env
-    # Build with verbose logging if possible
     - npm run build
-    # Debug: Check what's in the dist directory
-    - ls -la dist/
     - cp -a dist/. public/
   artifacts:
     paths:
