@@ -1,4 +1,4 @@
-image: node:16.5.0
+image: node:lts
 pages:
   stage: deploy
   cache:
@@ -10,6 +10,8 @@ pages:
       - node_modules/
   script:
     - npm install
+    # Create a .env file with your variable before building
+    - echo "VITE_APP_API_URL=$VITE_APP_API_URL" > .env
     - npm run build
     - cp -a dist/. public/
   artifacts:
