@@ -3,7 +3,6 @@ import './App.css';
 import FileUpload from './FileUpload';
 import ModelViewer from './ModelViewer';
 import { Upload, LayoutTemplate, ChevronDown } from 'lucide-react';
-import ScalingWrapper from './ScalingWrapper'; // Import the new component
 
 function App() {
     const [modelUrl, setModelUrl] = useState(null);
@@ -55,79 +54,77 @@ function App() {
     };
 
     return (
-        <ScalingWrapper>
-            <div className="App">
-                {showUploadScreen ? (
-                    <div className="upload-screen">
-                        <div className="upload-content">
-                            <header className="App-header">
-                                <h1>StructViz3D</h1>
-                                <p>Upload and view your structural engineering models in 3D</p>
-                            </header>
+        <div className="App">
+            {showUploadScreen ? (
+                <div className="upload-screen">
+                    <div className="upload-content">
+                        <header className="App-header">
+                            <h1>StructViz3D</h1>
+                            <p>Upload and view your structural engineering models in 3D</p>
+                        </header>
 
-                            <div className="options-container">
-                                <div className="option-card">
-                                    <div className="option-icon">
-                                        <LayoutTemplate size={48} />
-                                    </div>
-                                    <h2>Try Sample Models</h2>
-                                    <p>Test the viewer with pre-loaded models</p>
-                                    <div className="sample-selector">
-                                        <button
-                                            className="sample-dropdown-button"
-                                            onClick={toggleSampleDropdown}
-                                        >
-                                            Select a Model <ChevronDown size={16} />
-                                        </button>
-                                        {showSampleDropdown && (
-                                            <div className="sample-dropdown-menu">
-                                                {sampleModels.map((model) => (
-                                                    <div
-                                                        key={model.file}
-                                                        className="sample-dropdown-item"
-                                                        onClick={() => handleSampleModel(model.file)}
-                                                    >
-                                                        {model.name}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
+                        <div className="options-container">
+                            <div className="option-card">
+                                <div className="option-icon">
+                                    <LayoutTemplate size={48} />
                                 </div>
+                                <h2>Try Sample Models</h2>
+                                <p>Test the viewer with pre-loaded models</p>
+                                <div className="sample-selector">
+                                    <button
+                                        className="sample-dropdown-button"
+                                        onClick={toggleSampleDropdown}
+                                    >
+                                        Select a Model <ChevronDown size={16} />
+                                    </button>
+                                    {showSampleDropdown && (
+                                        <div className="sample-dropdown-menu">
+                                            {sampleModels.map((model) => (
+                                                <div
+                                                    key={model.file}
+                                                    className="sample-dropdown-item"
+                                                    onClick={() => handleSampleModel(model.file)}
+                                                >
+                                                    {model.name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
-                                <div className="option-card">
-                                    <div className="option-icon">
-                                        <Upload size={48} />
-                                    </div>
-                                    <h2>Upload Your Model</h2>
-                                    <p>Upload your own STL file to view in 3D</p>
-                                    <div className="upload-section">
-                                        <FileUpload onModelLoad={handleModelLoad} />
-                                    </div>
+                            <div className="option-card">
+                                <div className="option-icon">
+                                    <Upload size={48} />
+                                </div>
+                                <h2>Upload Your Model</h2>
+                                <p>Upload your own STL file to view in 3D</p>
+                                <div className="upload-section">
+                                    <FileUpload onModelLoad={handleModelLoad} />
                                 </div>
                             </div>
                         </div>
                     </div>
-                ) : (
-                    <div className="viewer-screen">
-                        <div className="new-upload-button">
-                            <button onClick={handleNewUpload} className="back-button" title="Upload new model">
-                                <Upload size={20} />
-                                <span>New Upload</span>
-                            </button>
-                        </div>
-
-                        <div className="fullscreen-viewer">
-                            <ModelViewer
-                                modelUrl={modelUrl}
-                                binUrl={binUrl}
-                                onLoad={() => setIsLoading(false)}
-                            />
-                        </div>
+                </div>
+            ) : (
+                <div className="viewer-screen">
+                    <div className="new-upload-button">
+                        <button onClick={handleNewUpload} className="back-button" title="Upload new model">
+                            <Upload size={20} />
+                            <span>New Upload</span>
+                        </button>
                     </div>
-                )}
-            </div>
-        </ScalingWrapper>
+
+                    <div className="fullscreen-viewer">
+                        <ModelViewer
+                            modelUrl={modelUrl}
+                            binUrl={binUrl}
+                            onLoad={() => setIsLoading(false)}
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
 
