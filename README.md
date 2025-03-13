@@ -4,7 +4,7 @@
 
 StructViz3D is a web-based application for visualizing and interacting with 3D structural engineering models. It provides engineers, architects, and designers with a powerful tool to view, analyze, and manipulate STL and GLTF files directly in the browser.
 
-![StructViz3D Screenshot](https://via.placeholder.com/800x450)
+![StructViz3D Screenshot](https://github.com/user-attachments/assets/6f509d6e-e994-4cdc-a0e9-497cc2f34722)
 
 ## 🔍 Features
 
