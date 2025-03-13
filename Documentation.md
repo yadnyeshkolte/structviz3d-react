@@ -850,43 +850,6 @@ StructViz3D implements several optimizations for model loading:
 
 These optimizations ensure efficient and reliable model loading, even for complex models or slower network connections.
 
-# StructViz3D - Comprehensive Project Documentation
-
-## Table of Contents
-- [Introduction](#introduction)
-- [Resource Management](#resource-management)
-    - [Loading Optimization](#loading-optimization)
-    - [Memory Management](#memory-management)
-- [Performance Optimization](#performance-optimization)
-    - [Render Loop](#render-loop)
-    - [Geometry Management](#geometry-management)
-- [Responsive Design](#responsive-design)
-- [Advanced Features](#advanced-features)
-    - [Fullscreen Mode](#fullscreen-mode)
-    - [View Presets](#view-presets)
-- [Error Handling](#error-handling)
-- [Extension Points](#extension-points)
-- [Developer Guide](#developer-guide)
-    - [Component Structure](#component-structure)
-    - [Adding New Features](#adding-new-features)
-- [Future Enhancements](#future-enhancements)
-- [Troubleshooting](#troubleshooting)
-- [Conclusion](#conclusion)
-
-## Introduction
-
-StructViz3D is a web-based 3D model viewer specifically designed for structural engineering models. Built using React and Three.js, it provides engineers and designers with a powerful tool to visualize and interact with 3D structural models in real-time. The application supports various file formats including STL and GLTF, making it versatile for different modeling workflows.
-
-The core functionality of StructViz3D includes:
-- High-performance 3D rendering
-- Interactive model manipulation (pan, rotate, zoom)
-- Advanced visualization features (wireframe mode, color customization, grid overlays)
-- Adaptable camera modes (perspective and orthographic)
-- Lighting control for optimal model visibility
-- User-friendly interface with intuitive controls
-
-This documentation provides a comprehensive overview of the StructViz3D project, focusing on technical implementation details, best practices, and developer guidance for future enhancement and maintenance.
-
 ## Resource Management
 
 ### Loading Optimization
